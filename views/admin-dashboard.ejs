@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>Dashboard · <%= companyName %> Admin</title>
+</head>
+<body>
+  <%- include('partials/adminnav') %>
+
+  <main class="wide">
+    <% if (notice) { %><div class="alert alert-error"><%= notice %></div><% } %>
+    <% if (created) { %>
+      <div class="alert alert-success">
+        Welcome call created for <strong><%= created.homeowner_name %></strong>. Share this link with them:
+        <div class="share-row">
+          <input class="share-input" readonly value="<%= appUrl %>/call/<%= created.token %>" onclick="this.select()">
+          <button class="btn btn-sm" onclick="navigator.clipboard.writeText('<%= appUrl %>/call/<%= created.token %>');this.textContent='Copied!'">Copy</button>
+        </div>
+      </div>
+    <% } %>
+
+    <div class="stats-row">
+      <div class="stat"><div class="stat-num"><%= stats.total %></div><div class="stat-label">Total calls</div></div>
+      <div class="stat"><div class="stat-num ok"><%= stats.completed %></div><div class="stat-label">Completed clean</div></div>
+      <div class="stat"><div class="stat-num warn"><%= stats.flagged %></div><div class="stat-label">Flagged for review</div></div>
+      <div class="stat"><div class="stat-num"><%= stats.pending %></div><div class="stat-label">Pending / in progress</div></div>
+    </div>
+
+    <div class="card">
+      <details <%= stats.total === 0 ? 'open' : '' %>>
+        <summary class="h2-summary">➕ Create a new welcome call link</summary>
+        <p class="muted">Fill in the homeowner's info from your records, then share the generated link — or let them fill in their own details on the public landing page at <a href="<%= appUrl %>" target="_blank"><%= appUrl %></a>.</p>
+        <form method="post" action="/admin/calls/new" class="grid-form">
+          <label>Full name <span class="req">*</span><input name="homeowner_name" required maxlength="200"></label>
+          <label>Phone <span class="req">*</span><input name="phone" required maxlength="40"></label>
+          <label>Email<input name="email" type="email" maxlength="200"></label>
+          <label>Property address <span class="req">*</span><input name="property_address" required maxlength="400"></label>
+          <label>Agreement reference<input name="agreement_ref" maxlength="200"></label>
+          <label class="grid-span">Agreement details to verify (one per line — the AI reads these back and gets a "yes / I understand" for each)
+            <textarea name="terms" rows="4" placeholder="e.g.&#10;- Monthly payment of $150 for 25 years&#10;- System size: 8.5 kW&#10;- No upfront cost; installation begins after permit approval"></textarea>
+          </label>
+          <button class="btn btn-primary" type="submit">Create call link</button>
+        </form>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>Welcome calls</h2>
+      <% if (calls.length === 0) { %>
+        <p class="muted">No calls yet. Create a link above or share the landing page.</p>
+      <% } else { %>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Homeowner</th><th>Property</th><th>Status</th><th>Flags</th><th>Recording</th><th>Created</th><th></th></tr>
+          </thead>
+          <tbody>
+            <% calls.forEach((c) => { %>
+              <tr>
+                <td><strong><%= c.homeowner_name %></strong><br><span class="muted"><%= c.phone %></span></td>
+                <td class="cell-wrap"><%= c.property_address %></td>
+                <td><span class="pill pill-<%= c.status %>"><%= c.status.replace('_', ' ') %></span></td>
+                <td class="cell-wrap">
+                  <% if (c.flags.length) { %>⚠️ <%= c.flags.length %> issue<%= c.flags.length > 1 ? 's' : '' %><% } else { %><span class="muted">—</span><% } %>
+                </td>
+                <td>
+                  <% if (c.recording_file) { %>
+                    <a class="btn btn-sm" href="/admin/calls/<%= c.id %>/recording?download=1">⬇ Download</a>
+                  <% } else { %><span class="muted">—</span><% } %>
+                </td>
+                <td class="muted"><%= c.created_at %></td>
+                <td><a class="btn btn-sm btn-ghost" href="/admin/calls/<%= c.id %>">View →</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% } %>
+    </div>
+  </main>
+</body>
+</html>

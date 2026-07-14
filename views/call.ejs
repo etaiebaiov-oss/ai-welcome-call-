@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>Your Welcome Call · <%= companyName %></title>
+</head>
+<body class="public">
+  <nav class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/"><span class="brand-dot"></span><%= companyName %></a>
+      <div class="topbar-links"><span class="pill pill-soft">Welcome Call Center</span></div>
+    </div>
+  </nav>
+
+  <main class="narrow center-page">
+    <% if (done) { %>
+      <div class="card center-text">
+        <div class="big-emoji">✅</div>
+        <h1>Welcome call completed</h1>
+        <p class="lead">Thank you, <%= call.homeowner_name %>! Your welcome call is done and on file. There's nothing else you need to do.</p>
+      </div>
+    <% } else { %>
+      <div class="card" id="call-card">
+        <h1>Hi <%= call.homeowner_name.split(' ')[0] %> 👋</h1>
+        <p class="lead">You're all set to complete your welcome call. Find a quiet spot, and when you're ready, press the button below — our friendly assistant will walk you through everything. Most calls take 3&ndash;5 minutes.</p>
+
+        <div class="info-box">
+          <div><span class="muted">Name:</span> <%= call.homeowner_name %></div>
+          <div><span class="muted">Property:</span> <%= call.property_address %></div>
+          <div><span class="muted">Phone on file:</span> <%= call.phone %></div>
+        </div>
+
+        <label class="consent">
+          <input type="checkbox" id="consent-check">
+          <span>I understand and agree that this welcome call will take place on a <strong>recorded line</strong> and kept on file for quality and compliance purposes.</span>
+        </label>
+
+        <div id="pre-call">
+          <button class="btn btn-primary btn-lg" id="start-btn" disabled>🎙️ Start my welcome call</button>
+          <p class="fineprint">Your browser will ask for microphone access — please tap "Allow".</p>
+        </div>
+
+        <div id="in-call" class="hidden">
+          <div class="call-status">
+            <span class="live-dot"></span>
+            <span id="status-text">Connecting…</span>
+          </div>
+          <div class="volume-bar"><div id="volume-fill"></div></div>
+          <button class="btn btn-danger" id="end-btn">End call</button>
+        </div>
+
+        <div id="post-call" class="hidden center-text">
+          <div class="big-emoji">✅</div>
+          <h2>All done — thank you!</h2>
+          <p class="lead">Your welcome call has been completed and securely stored. You can close this page.</p>
+        </div>
+
+        <div id="call-error" class="alert alert-error hidden"></div>
+      </div>
+    <% } %>
+  </main>
+
+  <footer class="footer">&copy; <%= new Date().getFullYear() %> <%= companyName %> · Welcome Call Center</footer>
+
+  <% if (!done) { %>
+  <script>window.CALL_TOKEN = <%- JSON.stringify(call.token) %>;</script>
+  <script type="module" src="/call.js"></script>
+  <% } %>
+</body>
+</html>

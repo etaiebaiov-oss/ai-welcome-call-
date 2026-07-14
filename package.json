@@ -1,0 +1,19 @@
+{
+  "name": "ai-welcome-call",
+  "version": "1.0.0",
+  "description": "AI-powered welcome call platform: personalized, recorded compliance verification calls for homeowners with an admin review dashboard.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "cookie-parser": "^1.4.7",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2"
+  }
+}

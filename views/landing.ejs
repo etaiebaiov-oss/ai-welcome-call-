@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>Welcome Call · <%= companyName %></title>
+</head>
+<body class="public">
+  <nav class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/"><span class="brand-dot"></span><%= companyName %></a>
+      <div class="topbar-links"><span class="pill pill-soft">Welcome Call Center</span></div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <h1>Complete your welcome call<br>in just a few minutes</h1>
+    <p class="lead">
+      As part of getting you set up, we do a quick, friendly welcome call to verify your
+      information and make sure you fully understand your agreement. It takes about
+      3&ndash;5 minutes, and you can do it right here — no appointment needed.
+    </p>
+    <div class="hero-points">
+      <div class="point"><span class="point-icon">🕐</span><div><strong>Quick &amp; easy</strong><br>Simple yes / "I understand" answers</div></div>
+      <div class="point"><span class="point-icon">🎙️</span><div><strong>Recorded for your protection</strong><br>Kept securely on file for compliance</div></div>
+      <div class="point"><span class="point-icon">🤝</span><div><strong>Friendly &amp; pressure-free</strong><br>Questions? We'll flag them for a real person to follow up</div></div>
+    </div>
+  </header>
+
+  <main class="narrow">
+    <div class="card">
+      <h2>Start your welcome call</h2>
+      <p class="muted">Enter your details so we can personalize your call. Your information is only used for this verification.</p>
+      <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+      <form method="post" action="/calls" class="stack">
+        <label>Full name <span class="req">*</span>
+          <input name="homeowner_name" required maxlength="200" value="<%= values.homeowner_name || '' %>" placeholder="e.g. Jane Smith">
+        </label>
+        <label>Phone number <span class="req">*</span>
+          <input name="phone" required maxlength="40" type="tel" value="<%= values.phone || '' %>" placeholder="e.g. (555) 123-4567">
+        </label>
+        <label>Email <span class="muted">(optional)</span>
+          <input name="email" type="email" maxlength="200" value="<%= values.email || '' %>" placeholder="e.g. jane@email.com">
+        </label>
+        <label>Property address <span class="req">*</span>
+          <input name="property_address" required maxlength="400" value="<%= values.property_address || '' %>" placeholder="Street, city, state, ZIP">
+        </label>
+        <label>Agreement / account reference <span class="muted">(optional, if you have it)</span>
+          <input name="agreement_ref" maxlength="200" value="<%= values.agreement_ref || '' %>" placeholder="e.g. contract #, account #">
+        </label>
+        <button class="btn btn-primary btn-lg" type="submit">Continue to my welcome call →</button>
+      </form>
+    </div>
+    <p class="fineprint">
+      Welcome calls are recorded on an acknowledged, recorded line for quality and compliance purposes.
+      You'll be asked to confirm this at the start of the call.
+    </p>
+  </main>
+
+  <footer class="footer">&copy; <%= new Date().getFullYear() %> <%= companyName %> · Welcome Call Center</footer>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>Call Script · <%= companyName %> Admin</title>
+</head>
+<body>
+  <%- include('partials/adminnav') %>
+
+  <main class="wide">
+    <div class="card">
+      <h1>Call script</h1>
+      <p class="muted">
+        This is the script the AI follows on every welcome call. Edit it to match your exact wording —
+        changes sync to the voice assistant automatically when you save.
+        You can use these placeholders anywhere and they'll be filled in per homeowner:
+        <code>{{homeownerName}}</code> <code>{{propertyAddress}}</code> <code>{{phoneNumber}}</code>
+        <code>{{agreementRef}}</code> <code>{{terms}}</code> <code>{{companyName}}</code>
+      </p>
+      <% if (saved) { %><div class="alert alert-success">Script saved and synced to the voice assistant.</div><% } %>
+      <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+      <form method="post" action="/admin/script" class="stack">
+        <textarea name="script" rows="28" class="code-area"><%= script %></textarea>
+        <div class="btn-row">
+          <button class="btn btn-primary" type="submit">Save &amp; sync script</button>
+          <button class="btn btn-ghost" type="button" onclick="if(confirm('Reset to the default script?')){document.querySelector('.code-area').value=document.getElementById('default-script').textContent;}">Reset to default</button>
+        </div>
+      </form>
+      <script type="text/plain" id="default-script"><%= defaultScript %></script>
+    </div>
+  </main>
+</body>
+</html>

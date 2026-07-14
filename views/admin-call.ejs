@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title><%= call.homeowner_name %> · <%= companyName %> Admin</title>
+</head>
+<body>
+  <%- include('partials/adminnav') %>
+
+  <main class="wide">
+    <a class="muted" href="/admin">← Back to dashboard</a>
+    <% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
+
+    <div class="card">
+      <div class="detail-header">
+        <h1><%= call.homeowner_name %></h1>
+        <span class="pill pill-<%= call.status %>"><%= call.status.replace('_', ' ') %></span>
+      </div>
+
+      <div class="detail-grid">
+        <div><span class="muted">Phone</span><br><%= call.phone %></div>
+        <div><span class="muted">Email</span><br><%= call.email || '—' %></div>
+        <div><span class="muted">Property address</span><br><%= call.property_address %></div>
+        <div><span class="muted">Agreement ref</span><br><%= call.agreement_ref || '—' %></div>
+        <div><span class="muted">Created</span><br><%= call.created_at %> (by <%= call.created_by %>)</div>
+        <div><span class="muted">Completed</span><br><%= call.completed_at || '—' %></div>
+        <% if (call.duration_seconds) { %><div><span class="muted">Duration</span><br><%= Math.round(call.duration_seconds / 60) %> min <%= Math.round(call.duration_seconds % 60) %> sec</div><% } %>
+      </div>
+
+      <% if (call.terms) { %>
+        <h3>Agreement details verified on this call</h3>
+        <pre class="pre-box"><%= call.terms %></pre>
+      <% } %>
+
+      <% if (['pending', 'in_progress'].includes(call.status)) { %>
+        <h3>Share link</h3>
+        <div class="share-row">
+          <input class="share-input" readonly value="<%= appUrl %>/call/<%= call.token %>" onclick="this.select()">
+          <button class="btn btn-sm" onclick="navigator.clipboard.writeText('<%= appUrl %>/call/<%= call.token %>');this.textContent='Copied!'">Copy</button>
+        </div>
+        <% if (phoneCallsEnabled) { %>
+          <form method="post" action="/admin/calls/<%= call.id %>/dial" class="inline-form" style="margin-top:12px">
+            <button class="btn btn-primary" type="submit" onclick="return confirm('The AI will call <%= call.phone %> now. Continue?')">📞 Have the AI call their phone instead</button>
+          </form>
+        <% } %>
+      <% } %>
+    </div>
+
+    <% if (flags.length) { %>
+      <div class="card flag-card">
+        <h2>⚠️ Flagged for review</h2>
+        <ul class="flag-list">
+          <% flags.forEach((f) => { %><li><%= f %></li><% }) %>
+        </ul>
+      </div>
+    <% } %>
+
+    <% if (call.recording_file || call.recording_url) { %>
+      <div class="card">
+        <h2>🎙️ Recording <span class="muted" style="font-weight:normal;font-size:0.8em">(admin-only)</span></h2>
+        <% if (call.recording_file) { %>
+          <audio controls preload="none" src="/admin/calls/<%= call.id %>/recording" style="width:100%"></audio>
+          <p><a class="btn" href="/admin/calls/<%= call.id %>/recording?download=1">⬇ Download recording</a></p>
+        <% } else { %>
+          <p class="muted">Recording wasn't stored locally, but is available from Vapi: <a href="<%= call.recording_url %>" target="_blank" rel="noopener">open recording</a></p>
+        <% } %>
+      </div>
+    <% } %>
+
+    <% if (call.summary) { %>
+      <div class="card">
+        <h2>Call summary</h2>
+        <p><%= call.summary %></p>
+      </div>
+    <% } %>
+
+    <% if (analysis) { %>
+      <div class="card">
+        <h2>Verification checklist</h2>
+        <div class="check-grid">
+          <div><%= analysis.consented_to_recording ? '✅' : '❌' %> Recording consent</div>
+          <div><%= analysis.confirmed_identity ? '✅' : '❌' %> Identity confirmed</div>
+          <div><%= analysis.confirmed_address ? '✅' : '❌' %> Address confirmed</div>
+          <div><%= analysis.confirmed_terms ? '✅' : '❌' %> Terms confirmed</div>
+          <div><%= analysis.call_completed ? '✅' : '❌' %> Call completed</div>
+          <div><%= analysis.understood_everything ? '✅' : '⚠️' %> Understood everything</div>
+        </div>
+      </div>
+    <% } %>
+
+    <% if (call.transcript) { %>
+      <div class="card">
+        <h2>Transcript</h2>
+        <pre class="pre-box transcript"><%= call.transcript %></pre>
+      </div>
+    <% } %>
+  </main>
+</body>
+</html>

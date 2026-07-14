@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>Admin Login · <%= companyName %></title>
+</head>
+<body>
+  <main class="narrow center-page">
+    <div class="card">
+      <h1><span class="brand-dot"></span> <%= companyName %> Admin</h1>
+      <p class="muted">Sign in to review welcome calls, recordings, and flags.</p>
+      <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+      <form method="post" action="/admin/login" class="stack">
+        <label>Password
+          <input type="password" name="password" required autofocus>
+        </label>
+        <button class="btn btn-primary" type="submit">Sign in</button>
+      </form>
+    </div>
+  </main>
+</body>
+</html>
