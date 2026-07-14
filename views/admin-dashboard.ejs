@@ -36,8 +36,12 @@
           <label>Email<input name="email" type="email" maxlength="200"></label>
           <label>Property address <span class="req">*</span><input name="property_address" required maxlength="400"></label>
           <label>Agreement reference<input name="agreement_ref" maxlength="200"></label>
-          <label class="grid-span">Agreement details to verify (one per line — the AI reads these back and gets a "yes / I understand" for each)
-            <textarea name="terms" rows="4" placeholder="e.g.&#10;- Monthly payment of $150 for 25 years&#10;- System size: 8.5 kW&#10;- No upfront cost; installation begins after permit approval"></textarea>
+          <label>Monthly payment<input name="monthly_payment" maxlength="60" placeholder="e.g. $178.40"></label>
+          <label>Annual rate escalator<input name="escalator" maxlength="60" placeholder="e.g. 2.99%"></label>
+          <label>Agreement term<input name="term_length" maxlength="60" placeholder="e.g. 25 years"></label>
+          <label>Expected energy offset<input name="offset_percent" maxlength="60" placeholder="e.g. 124%"></label>
+          <label class="grid-span">Additional agreement details to verify (one per line — the AI reads these back and gets a "yes / I understand" for each)
+            <textarea name="terms" rows="4" placeholder="e.g.&#10;- System size: 8.5 kW&#10;- No upfront cost; installation begins after permit approval"></textarea>
           </label>
           <button class="btn btn-primary" type="submit">Create call link</button>
         </form>

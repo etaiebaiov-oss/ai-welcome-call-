@@ -56,6 +56,10 @@ function extractCallFields(body, createdBy) {
     property_address: clean(body.property_address),
     agreement_ref: clean(body.agreement_ref) || null,
     terms: clean(body.terms) || null,
+    monthly_payment: clean(body.monthly_payment) || null,
+    escalator: clean(body.escalator) || null,
+    term_length: clean(body.term_length) || null,
+    offset_percent: clean(body.offset_percent) || null,
     created_by: createdBy,
   };
   if (!data.homeowner_name || !data.phone || !data.property_address) {

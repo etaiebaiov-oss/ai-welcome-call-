@@ -45,6 +45,12 @@ CREATE INDEX IF NOT EXISTS idx_calls_vapi_call_id ON calls (vapi_call_id);
 CREATE INDEX IF NOT EXISTS idx_calls_status ON calls (status);
 `);
 
+// Additive migrations for databases created before these columns existed.
+const existingCols = db.prepare('PRAGMA table_info(calls)').all().map((c) => c.name);
+for (const col of ['monthly_payment', 'escalator', 'term_length', 'offset_percent']) {
+  if (!existingCols.includes(col)) db.exec(`ALTER TABLE calls ADD COLUMN ${col} TEXT`);
+}
+
 function getSetting(key) {
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
   return row ? row.value : null;
@@ -69,10 +75,12 @@ function createCall(data) {
   const token = crypto.randomBytes(16).toString('hex');
   const info = db
     .prepare(
-      `INSERT INTO calls (token, homeowner_name, phone, email, property_address, agreement_ref, terms, created_by)
-       VALUES (@token, @homeowner_name, @phone, @email, @property_address, @agreement_ref, @terms, @created_by)`
+      `INSERT INTO calls (token, homeowner_name, phone, email, property_address, agreement_ref, terms, created_by,
+                          monthly_payment, escalator, term_length, offset_percent)
+       VALUES (@token, @homeowner_name, @phone, @email, @property_address, @agreement_ref, @terms, @created_by,
+               @monthly_payment, @escalator, @term_length, @offset_percent)`
     )
-    .run({ token, ...data });
+    .run({ token, monthly_payment: null, escalator: null, term_length: null, offset_percent: null, ...data });
   return db.prepare('SELECT * FROM calls WHERE id = ?').get(info.lastInsertRowid);
 }
 
