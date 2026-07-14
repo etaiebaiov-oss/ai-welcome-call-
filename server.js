@@ -91,7 +91,7 @@ app.get('/api/call-config/:token', async (req, res) => {
     res.json({
       publicKey: process.env.VAPI_PUBLIC_KEY,
       assistantId,
-      overrides: { variableValues: vapi.variableValuesFor(call) },
+      overrides: vapi.overridesFor(call),
     });
   } catch (err) {
     console.error('call-config failed:', err.message);

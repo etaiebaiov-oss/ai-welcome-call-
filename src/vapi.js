@@ -4,6 +4,11 @@ const { getSetting, setSetting, getOrCreateSecret } = require('./db');
 const VAPI_BASE = 'https://api.vapi.ai';
 const COMPANY_NAME = process.env.COMPANY_NAME || 'Your Company';
 
+// The "brain" of the call. Swappable via env vars without touching code -
+// Vapi supports OpenAI, Anthropic (Claude), Google Gemini, and more.
+const MODEL_PROVIDER = process.env.VAPI_MODEL_PROVIDER || 'openai';
+const MODEL = process.env.VAPI_MODEL || 'gpt-4.1';
+
 // The default welcome-call script. Fully editable in Admin -> Call Script.
 // Available variables: {{homeownerName}}, {{propertyAddress}}, {{phoneNumber}},
 // {{agreementRef}}, {{terms}}, {{companyName}}
@@ -123,8 +128,8 @@ function buildAssistantPayload() {
     name: `${COMPANY_NAME} Welcome Call`,
     firstMessage: `Hi there! Am I speaking with {{homeownerName}}?`,
     model: {
-      provider: 'openai',
-      model: 'gpt-4o',
+      provider: MODEL_PROVIDER,
+      model: MODEL,
       temperature: 0.4,
       messages: [{ role: 'system', content: buildSystemPrompt(getScript()) }],
     },
@@ -189,6 +194,39 @@ async function ensureAssistant() {
   return assistantId;
 }
 
+// Per-call vocabulary boosting: Deepgram nova-3 "keyterm prompting" makes the
+// transcriber far more accurate on words it wouldn't normally expect - the
+// homeowner's name, their street name, the company name, and any unusual
+// terms that appear in their specific agreement.
+function keytermsFor(call) {
+  const words = new Set();
+  const addWords = (text, minLen) => {
+    String(text || '')
+      .split(/[^A-Za-z']+/)
+      .forEach((w) => {
+        if (w.length >= minLen) words.add(w);
+      });
+  };
+  addWords(call.homeowner_name, 3);
+  addWords(call.property_address, 3);
+  addWords(COMPANY_NAME, 3);
+  addWords(call.agreement_ref, 3);
+  addWords(call.terms, 6); // only distinctive longer words from the terms text
+  return [...words].slice(0, 30);
+}
+
+// Everything that personalizes the shared assistant for one specific call.
+function overridesFor(call) {
+  return {
+    variableValues: variableValuesFor(call),
+    transcriber: {
+      provider: 'deepgram',
+      model: 'nova-3',
+      keyterm: keytermsFor(call),
+    },
+  };
+}
+
 function variableValuesFor(call) {
   return {
     companyName: COMPANY_NAME,
@@ -209,7 +247,7 @@ async function startPhoneCall(call) {
     assistantId,
     phoneNumberId,
     customer: { number: call.phone },
-    assistantOverrides: { variableValues: variableValuesFor(call) },
+    assistantOverrides: overridesFor(call),
   });
 }
 
@@ -218,6 +256,6 @@ module.exports = {
   DEFAULT_SCRIPT,
   getScript,
   ensureAssistant,
-  variableValuesFor,
+  overridesFor,
   startPhoneCall,
 };
