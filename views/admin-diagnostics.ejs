@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>Diagnostics · <%= companyName %> Admin</title>
+</head>
+<body>
+  <%- include('partials/adminnav') %>
+
+  <main class="wide">
+    <div class="card">
+      <h1>System diagnostics</h1>
+      <% if (allOk) { %>
+        <div class="alert alert-success"><strong>All checks passed.</strong> Calls should work — if a customer still sees an error, try the call link again and then re-run this page.</div>
+      <% } else { %>
+        <div class="alert alert-error"><strong>Something needs fixing.</strong> Work through the red items below from top to bottom — the hints tell you exactly what to change.</div>
+      <% } %>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th></th><th>Check</th><th>Details</th></tr></thead>
+          <tbody>
+            <% checks.forEach((c) => { %>
+              <tr>
+                <td style="font-size:1.2rem"><%= c.ok ? '✅' : '❌' %></td>
+                <td><strong><%= c.name %></strong><% if (c.hint) { %><br><span class="muted">→ <%= c.hint %></span><% } %></td>
+                <td class="cell-wrap"><code style="word-break:break-all"><%= c.detail %></code></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:16px"><a class="btn btn-primary" href="/admin/diagnostics">Run checks again</a></p>
+    </div>
+  </main>
+</body>
+</html>

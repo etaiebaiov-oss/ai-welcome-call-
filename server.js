@@ -303,6 +303,65 @@ app.post('/admin/calls/:id/dial', auth.requireAdmin, async (req, res) => {
   }
 });
 
+app.get('/admin/diagnostics', auth.requireAdmin, async (req, res) => {
+  const checks = [];
+  const add = (name, ok, detail, hint) => checks.push({ name, ok, detail, hint: ok ? null : hint });
+
+  const priv = process.env.VAPI_PRIVATE_KEY || '';
+  const pub = process.env.VAPI_PUBLIC_KEY || '';
+
+  add('VAPI_PRIVATE_KEY is set', Boolean(priv), priv ? `present (ends in …${priv.slice(-4)})` : 'missing',
+    'Add it in Railway → Variables. It is on the Vapi dashboard API Keys page, labeled "Private Key".');
+  add('VAPI_PUBLIC_KEY is set', Boolean(pub), pub ? `present (ends in …${pub.slice(-4)})` : 'missing',
+    'Add it in Railway → Variables. It is on the Vapi dashboard API Keys page, labeled "Public Key".');
+  if (priv && pub) {
+    add('Private and public keys are different values', priv !== pub, priv === pub ? 'the SAME key is in both variables' : 'ok',
+      'You pasted one key into both variables. Go back to the Vapi API Keys page and copy the other key — there are two.');
+  }
+
+  const appU = (process.env.APP_URL || '').replace(/\/+$/, '');
+  add('APP_URL is set and looks valid', /^https:\/\/[^/]+$/.test(appU), appU || 'missing',
+    'Set APP_URL in Railway → Variables to your site address, e.g. https://welcomecall.solar — https, no trailing slash, no path.');
+  if (appU) {
+    let sameHost = false;
+    try { sameHost = new URL(appU).host === req.get('host'); } catch {}
+    add('APP_URL matches the address you are browsing', sameHost, `APP_URL is ${appU}, you are on https://${req.get('host')}`,
+      'Not necessarily a problem (you may be on the railway.app address while APP_URL is your custom domain), but share links and Vapi webhooks will use APP_URL — make sure that is the address that works.');
+  }
+
+  try {
+    const probe = path.join(RECORDINGS_DIR, '.diagnostic-probe');
+    fs.writeFileSync(probe, 'ok');
+    fs.unlinkSync(probe);
+    add('Recording storage is writable', true, RECORDINGS_DIR);
+  } catch (err) {
+    add('Recording storage is writable', false, err.message,
+      'Check that the Railway volume is attached at /data and the DATA_DIR variable is /data.');
+  }
+
+  if (priv) {
+    try {
+      await vapi.testPrivateKey();
+      add('Vapi accepts the private key', true, 'authenticated successfully');
+    } catch (err) {
+      add('Vapi accepts the private key', false, err.message,
+        err.status === 401 || err.status === 403
+          ? 'Vapi rejected this key for server use — you most likely put the PUBLIC key in VAPI_PRIVATE_KEY. Swap in the key labeled "Private Key" from the Vapi dashboard.'
+          : 'Vapi could not be reached or returned an unexpected error — see the detail text.');
+    }
+
+    try {
+      const assistantId = await vapi.ensureAssistant();
+      add('Voice assistant is created and in sync', true, `assistant ${assistantId}`);
+    } catch (err) {
+      add('Voice assistant is created and in sync', false, err.message,
+        'This is the exact error stopping calls from starting. Fix the items above first; if they are all green, send this error text to your developer.');
+    }
+  }
+
+  res.render('admin-diagnostics', { ...BRAND, checks, allOk: checks.every((c) => c.ok) });
+});
+
 app.get('/admin/script', auth.requireAdmin, (req, res) => {
   res.render('admin-script', {
     ...BRAND,

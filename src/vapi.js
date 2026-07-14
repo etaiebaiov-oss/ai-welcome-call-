@@ -183,9 +183,17 @@ async function vapiRequest(method, path, body) {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(`Vapi API ${method} ${path} failed (${res.status}): ${text.slice(0, 500)}`);
+    const err = new Error(`Vapi API ${method} ${path} failed (${res.status}): ${text.slice(0, 500)}`);
+    err.status = res.status;
+    throw err;
   }
   return res.json();
+}
+
+// Cheap authenticated request used by the diagnostics page to verify the
+// private key actually works against Vapi's server API.
+function testPrivateKey() {
+  return vapiRequest('GET', '/assistant?limit=1');
 }
 
 // Creates the Vapi assistant on first use; updates it whenever the script,
@@ -283,4 +291,5 @@ module.exports = {
   ensureAssistant,
   overridesFor,
   startPhoneCall,
+  testPrivateKey,
 };
