@@ -165,6 +165,12 @@ th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-al
 .flag-card { border-color: #fcd34d; background: #fffdf5; }
 .flag-list li { margin-bottom: 6px; }
 
+/* Dashboard search + filter tabs */
+.filter-row { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+#call-search { width: 100%; }
+.filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.filter-btn.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+
 /* Client dropdown rows (admin dashboard) */
 .call-acc { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; background: #fff; }
 .call-acc summary {

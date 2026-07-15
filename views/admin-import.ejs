@@ -57,6 +57,31 @@
         <p style="margin-top:14px"><a class="btn btn-primary" href="/admin">Go to dashboard →</a></p>
       </div>
     <% } %>
+
+    <% if (imported && imported.length) { %>
+      <div class="card">
+        <h2>All imported clients <span class="muted" style="font-weight:normal;font-size:0.8em">(saved — every import lives here)</span></h2>
+        <h3>Copy all as CSV</h3>
+        <textarea class="code-area" rows="6" readonly onclick="this.select()"><%= 'Name,Phone,Email,Status,Change Order,Link\n' + imported.map(c => [c.homeowner_name, c.phone, c.email || '', c.status, c.changeOrder ? 'YES' : '', c.link].join(',')).join('\n') %></textarea>
+        <div class="table-scroll" style="margin-top:16px">
+          <table>
+            <thead><tr><th>Homeowner</th><th>Phone</th><th>Status</th><th></th><th>Link</th><th></th></tr></thead>
+            <tbody>
+              <% imported.forEach((c) => { %>
+                <tr>
+                  <td><strong><%= c.homeowner_name %></strong></td>
+                  <td><%= c.phone %></td>
+                  <td><span class="pill pill-<%= c.status %>"><%= c.status.replace('_', ' ') %></span></td>
+                  <td><% if (c.changeOrder) { %><span class="pill pill-flagged">⚠️ Change order</span><% } %></td>
+                  <td class="cell-wrap"><a href="<%= c.link %>" target="_blank"><%= c.link %></a></td>
+                  <td><a class="btn btn-sm btn-ghost" href="/admin/calls/<%= c.id %>">View →</a></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% } %>
   </main>
 </body>
 </html>

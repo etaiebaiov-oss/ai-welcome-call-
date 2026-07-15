@@ -51,8 +51,23 @@
       <% if (calls.length === 0) { %>
         <p class="muted">No calls yet. Create a link above, import your deal board, or share the landing page.</p>
       <% } else { %>
+        <div class="filter-row">
+          <input id="call-search" type="search" placeholder="🔎 Search name, phone, address, installer…" autocomplete="off">
+          <div class="filter-tabs">
+            <button class="btn btn-sm filter-btn active" data-filter="all">All (<%= calls.length %>)</button>
+            <button class="btn btn-sm filter-btn" data-filter="pending">Pending (<%= calls.filter(c => ['pending','in_progress'].includes(c.status)).length %>)</button>
+            <button class="btn btn-sm filter-btn" data-filter="completed">Completed (<%= calls.filter(c => c.status === 'completed').length %>)</button>
+            <button class="btn btn-sm filter-btn" data-filter="flagged">Flagged (<%= calls.filter(c => c.status === 'flagged').length %>)</button>
+            <button class="btn btn-sm filter-btn" data-filter="changeorder">⚠️ Change orders (<%= calls.filter(c => c.changeOrder).length %>)</button>
+            <button class="btn btn-sm filter-btn" data-filter="import">Imported (<%= calls.filter(c => c.created_by === 'import').length %>)</button>
+          </div>
+        </div>
         <% calls.forEach((c) => { %>
-          <details class="call-acc">
+          <details class="call-acc"
+            data-search="<%= [c.homeowner_name, c.phone, c.property_address, c.installer || '', c.email || ''].join(' ').toLowerCase() %>"
+            data-status="<%= c.status %>"
+            data-changeorder="<%= c.changeOrder ? '1' : '0' %>"
+            data-import="<%= c.created_by === 'import' ? '1' : '0' %>">
             <summary>
               <span class="acc-name"><strong><%= c.homeowner_name %></strong><span class="muted"> · <%= c.phone %></span></span>
               <span class="acc-pills">
@@ -89,12 +104,47 @@
                 <a class="btn btn-sm" href="/admin/calls/<%= c.id %>">Full record →</a>
                 <% if (c.recording_file) { %><a class="btn btn-sm" href="/admin/calls/<%= c.id %>/recording?download=1">⬇ Recording</a><% } %>
                 <% if (['pending', 'in_progress'].includes(c.status)) { %>
+                  <a class="btn btn-sm" href="/call/<%= c.token %>" target="_blank" rel="noopener">▶ Do call now (on this device)</a>
+                  <% if (phoneCallsEnabled) { %>
+                    <form method="post" action="/admin/calls/<%= c.id %>/dial" class="inline-form">
+                      <button class="btn btn-sm btn-primary" type="submit" onclick="return confirm('The AI will call <%= c.phone %> right now. Continue?')">📞 AI calls their phone</button>
+                    </form>
+                  <% } %>
                   <input class="share-input" readonly value="<%= appUrl %>/call/<%= c.token %>" onclick="this.select()" style="flex:1;min-width:220px">
                 <% } %>
               </div>
             </div>
           </details>
         <% }) %>
+        <p class="muted" id="no-results" style="display:none">No clients match your search.</p>
+        <script>
+          const searchBox = document.getElementById('call-search');
+          const filterBtns = document.querySelectorAll('.filter-btn');
+          let activeFilter = 'all';
+          function applyFilters() {
+            const term = searchBox.value.trim().toLowerCase();
+            let visible = 0;
+            document.querySelectorAll('details.call-acc').forEach((d) => {
+              const matchesTerm = !term || d.dataset.search.includes(term);
+              const matchesFilter =
+                activeFilter === 'all' ? true :
+                activeFilter === 'pending' ? (d.dataset.status === 'pending' || d.dataset.status === 'in_progress') :
+                activeFilter === 'changeorder' ? d.dataset.changeorder === '1' :
+                activeFilter === 'import' ? d.dataset.import === '1' :
+                d.dataset.status === activeFilter;
+              const show = matchesTerm && matchesFilter;
+              d.style.display = show ? '' : 'none';
+              if (show) visible++;
+            });
+            document.getElementById('no-results').style.display = visible ? 'none' : '';
+          }
+          searchBox.addEventListener('input', applyFilters);
+          filterBtns.forEach((b) => b.addEventListener('click', () => {
+            activeFilter = b.dataset.filter;
+            filterBtns.forEach((x) => x.classList.toggle('active', x === b));
+            applyFilters();
+          }));
+        </script>
       <% } %>
     </div>
   </main>

@@ -329,12 +329,22 @@ app.post('/admin/calls/:id/dial', auth.requireAdmin, async (req, res) => {
   }
 });
 
+function importedCalls(req) {
+  return listCalls()
+    .filter((c) => c.created_by === 'import')
+    .map((c) => {
+      const deal = c.deal_json ? JSON.parse(c.deal_json) : null;
+      return { ...c, deal, changeOrder: hasChangeOrder(deal), link: `${appUrl(req)}/call/${c.token}` };
+    });
+}
+
 app.get('/admin/import', auth.requireAdmin, (req, res) => {
-  res.render('admin-import', { ...BRAND, result: null, error: null, appUrl: appUrl(req) });
+  res.render('admin-import', { ...BRAND, result: null, error: null, appUrl: appUrl(req), imported: importedCalls(req) });
 });
 
 app.post('/admin/import', auth.requireAdmin, upload.single('file'), (req, res) => {
-  const render = (data) => res.render('admin-import', { ...BRAND, result: null, error: null, appUrl: appUrl(req), ...data });
+  const render = (data) =>
+    res.render('admin-import', { ...BRAND, result: null, error: null, appUrl: appUrl(req), ...data, imported: importedCalls(req) });
   if (!req.file) return render({ error: 'Please choose a spreadsheet file (.xlsx or .csv) to upload.' });
 
   let parsed;
