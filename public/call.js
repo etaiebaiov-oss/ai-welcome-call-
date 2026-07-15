@@ -14,6 +14,7 @@ const consentRow = document.querySelector('.consent');
 let vapi = null;
 let wakeLock = null;
 let callActive = false;
+let callEnded = false;
 
 // Phones lock their screens mid-call, which suspends the browser tab and
 // kills the WebRTC connection ("customer disconnected"). Keep the screen
@@ -78,6 +79,7 @@ startBtn.addEventListener('click', async () => {
 
     vapi.on('call-end', () => {
       callActive = false;
+      callEnded = true;
       releaseWakeLock();
       inCall.classList.add('hidden');
       postCall.classList.remove('hidden');
@@ -86,6 +88,9 @@ startBtn.addEventListener('click', async () => {
 
     vapi.on('error', (err) => {
       console.error('vapi error', err);
+      // Disconnect noise fired after the call already ended (e.g. silence
+      // timeout ejection) is not a user-facing problem - don't alarm them.
+      if (callEnded) return;
       showError('The call hit a technical problem. Please try again — if it keeps happening, contact our team.');
     });
 
