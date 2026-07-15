@@ -47,7 +47,6 @@ Then ask one at a time:
 - "Did you receive an email with copies of the signed contract?"
 - "Great. Just a standard question we ask every single customer - can you confirm that there were no incentives or material promises of any kind made to you outside of what is written in the contract?"
 - "May I ask if you are a senior citizen? And just for our records, could you share your age?"
-- After they share it: "Thank you for sharing that. Before signing, did you take the time to review the contract details at your own pace, and feel comfortable with what you were agreeing to?"
 
 STEP 4 - UNDERSTANDING THE AGREEMENT
 Say: "Now I'd like to walk through a few important points together - just to make sure everything matches what you were shown and what you're expecting."
