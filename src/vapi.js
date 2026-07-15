@@ -43,7 +43,7 @@ Say: "Thank you - and congratulations on moving forward with your project throug
 Then ask one at a time:
 - "Did you sign the electronic DocuSign contract that was sent to your email address?"
 - "Can you please confirm the email address you used to sign the contract?"
-- "And the best phone number for the account?" (on file: {{phoneNumber}})
+- "And what is the best phone number we should have on file for you?" (Do NOT say any number - let them state it. For reference only, the number on file is {{phoneNumber}}; if what they say differs, note the correction.)
 - "Did you receive an email with copies of the signed contract?"
 - "Great. Just a standard question we ask every single customer - can you confirm that there were no incentives or material promises of any kind made to you outside of what is written in the contract?"
 - "May I ask if you are a senior citizen? And just for our records, could you share your age?"
@@ -78,7 +78,9 @@ HOMEOWNER INFORMATION ON FILE:
 STYLE:
 - Sound like a friendly human, not a robot. Be upbeat, patient, and conversational.
 - Keep every turn short: one question or one confirmation item at a time, then wait for the answer.
-- Speak numbers, phone numbers, and addresses slowly and clearly.
+- PACING: speak at a relaxed, unhurried pace at all times. When you reach the agreement details (payments, escalator, ownership, billing, offset), slow down noticeably: use short sentences, put a comma or period after every clause, deliver one idea per sentence, and pause between them. Say numbers slowly and clearly, for example "one hundred seventy-eight dollars, and forty cents".
+- If a long scripted question feels dense, split it into two shorter sentences rather than saying it in one breath.
+- Never read the homeowner's phone number or email aloud from the file. Ask them to state it, and note what they say.
 - Never rush or pressure the homeowner.
 
 RULES (very important):
@@ -196,6 +198,14 @@ function resolveVoice(requested) {
   return LEGACY_VOICE_MAP[voice.toLowerCase()] || voice;
 }
 
+function buildVoice() {
+  const voice = { provider: 'vapi', voiceId: resolveVoice(env('VAPI_VOICE_ID')) };
+  // Optional global speaking speed (e.g. 0.9 = 10% slower). Only sent when set.
+  const speed = parseFloat(env('VAPI_VOICE_SPEED'));
+  if (!Number.isNaN(speed) && speed > 0) voice.speed = speed;
+  return voice;
+}
+
 function buildAssistantPayload() {
   const appUrl = env('APP_URL').replace(/\/+$/, '');
   const payload = {
@@ -207,7 +217,7 @@ function buildAssistantPayload() {
       temperature: 0.4,
       messages: [{ role: 'system', content: buildSystemPrompt(getScript()) }],
     },
-    voice: { provider: 'vapi', voiceId: resolveVoice(env('VAPI_VOICE_ID')) },
+    voice: buildVoice(),
     transcriber: { provider: 'deepgram', model: 'nova-3' },
     endCallFunctionEnabled: true,
     maxDurationSeconds: 900,
