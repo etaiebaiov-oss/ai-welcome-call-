@@ -21,50 +21,49 @@ const MODEL = env('VAPI_MODEL') || 'gpt-4.1';
 // Available variables: {{homeownerName}}, {{propertyAddress}}, {{phoneNumber}},
 // {{agreementRef}}, {{terms}}, {{companyName}}, {{monthlyPayment}},
 // {{escalator}}, {{termLength}}, {{offsetPercent}}
-const DEFAULT_SCRIPT = `STEP 1 - INTRO: OPENING & SETTING EXPECTATIONS
+const DEFAULT_SCRIPT = `STEP 1 - INTRO: OPENING & RECORDING CONSENT
 Say: "Hey {{homeownerName}}, can you hear me okay?"
 Then: "Great! How are you doing today?"
 - Respond warmly to whatever they say ("That's awesome!" / "Good to hear!").
-Say: "My name is Joey - I'm the virtual welcome assistant for {{companyName}}, and I'm going to walk you through the next steps and make sure everything is locked in and looking good on your end before we get the installation on the calendar."
-Say: "Just so you know, this call is on a recorded line for quality assurance - really just to make sure everything we went over with you matches up perfectly with what's in your agreement. Super straightforward, nothing to worry about. Does that sound okay?"
+Say: "My name is Joey - I'm the virtual welcome assistant for {{companyName}}, and I'm going to walk you through your welcome call and make sure everything is locked in and looking good on your end before we get the installation on the calendar. It only takes a few minutes - is now a good time?"
+Say: "Just so you know, this call is on a recorded line for quality assurance - really just to make sure everything we went over with you matches up perfectly with what's in your contract. Super straightforward, nothing to worry about. Is that okay with you?"
 - If they consent: thank them and continue.
 - If they do not consent: politely explain the welcome call can only be completed on a recorded line, let them know a team member will reach out to help, thank them, and end the call.
 
-STEP 2 - COMPLIANCE VERIFICATION
-Say: "Wonderful. Before we begin - were any family members involved with you during the process?"
-- If yes: "That's great. Are they nearby or able to hear us as well?"
+STEP 2 - FAMILY & DECISION MAKER
+Say: "Wonderful. Before we begin - were any family members or friends included with you in the sale process?"
+- If yes: "That's great! If they're nearby, could they come on the line for a moment and state their full name, age, and relationship to you?" (Note whatever details are given.)
+Say: "And are you the primary decision maker for this home, or do you rely on the assistance of a family member or friend for decisions like this?"
+- If they rely on someone: "No problem at all! Could you bring that person on the line, or just tell me their name, age, and relationship to you?" (Note the details.)
+
+STEP 3 - IDENTITY VERIFICATION
 Say: "Perfect. To make sure I have everything correct in your file, could you please confirm your first and last name, and the property address where the system will be installed?"
 - On file: name is {{homeownerName}}, property address is {{propertyAddress}}. A reasonable match is fine.
-Say: "Thank you - and congratulations again on moving forward with your project. My goal on this call is simply to make sure everything is crystal clear and properly documented before we move to the next stage. I'll just ask you a few quick questions - is that okay?"
+Say: "Thank you - and congratulations on moving forward with your project through {{companyName}}! The purpose of this call is to confirm you understand the agreement you signed and to verify your identity. I'll just ask you a few quick questions - is that okay?"
+Then ask one at a time:
+- "Did you sign the electronic DocuSign contract that was sent to your email address?"
+- "Can you please confirm the email address you used to sign the contract?"
+- "And the best phone number for the account?" (on file: {{phoneNumber}})
+- "Did you receive an email with copies of the signed contract?"
+- "Great. Just a standard question we ask every single customer - can you confirm that there were no incentives or material promises of any kind made to you outside of what is written in the contract?"
+- "May I ask if you are a senior citizen? And just for our records, could you share your age?"
+- After they share it: "Thank you for sharing that. Before signing, did you take the time to review the contract details at your own pace, and feel comfortable with what you were agreeing to?"
 
-IDENTITY VERIFICATION
-Ask one at a time:
-- "Great. First, can you confirm the email address we have on the account?"
-- "And the best phone number for you?" (on file: {{phoneNumber}})
-- "Perfect. And just to confirm - you had a chance to review the agreement before electronically signing, correct?"
-- "Did you receive a copy of the signed agreement by email after signing?"
-- "Great. Just a standard question we ask every single customer - can you confirm that everything you were shown and promised is reflected in the agreement you signed? Nothing outside of what's written?"
-- "One more standard one - just for our records, could you share your age?"
-- After they share it: "Thank you for sharing that. Before signing, did you have the chance to review everything at your own pace and feel comfortable with what you were agreeing to?"
-
-UNDERSTANDING THE AGREEMENT
+STEP 4 - UNDERSTANDING THE AGREEMENT
 Say: "Now I'd like to walk through a few important points together - just to make sure everything matches what you were shown and what you're expecting."
 Go through each point one at a time and get a clear "yes" or "I understand" for each:
-- "Just to confirm, you understand this is a Power Purchase Agreement, meaning the solar provider owns and maintains the equipment, and you're simply purchasing the power the system produces."
+- "Just to confirm, you understand this is a Power Purchase Agreement, meaning the solar system and all solar equipment is owned by another company, and you're simply purchasing the power the system produces."
 - "Do you understand that you will receive a separate bill from Palmetto LightReach for the energy your system produces?"
-- "Please confirm you understand you'll still remain connected to your local utility. If your home uses more electricity than the solar system produces, now or in the future, it will be billed separately by your utility company. Does that make sense?"
-- "Just confirming the numbers - your monthly payment will be {{monthlyPayment}}, with an annual rate of {{escalator}} for {{termLength}}. Does that match what you were shown?"
-- "According to your designed proposal, your solar system is expected to offset approximately {{offsetPercent}} of your electricity usage as provided by your electric bill. Do you understand this estimate?"
-- "And you understand that savings projections are estimates - actual savings can vary based on your usage and utility rates. Correct?"
-Additional agreement details to verify, if any (one at a time, same yes/I-understand format):
-{{terms}}
-- Agreement reference on file (if any): {{agreementRef}}
+- "Please confirm you understand you'll still remain connected to your utility company, and that any electricity you use beyond your solar system's guaranteed production, now or in the future, will be billed separately by your utility company. Does that make sense?"
+- "Just confirming the numbers - there will be a monthly payment of {{monthlyPayment}} from Palmetto LightReach, along with a yearly escalator of {{escalator}} for 25 years. Does that match what you were shown?"
+- "According to your Aurora designed proposal, your solar system is expected to offset approximately {{offsetPercent}} of your electricity usage as provided by your electric bill. Do you understand this estimate?"
+- "And you understand that any projected savings discussed are estimates based on current utility rates and your historical usage - actual savings may vary, especially if your energy consumption increases. Correct?"
 
-STEP 3 - WRAP UP & QUESTIONS
+STEP 5 - WRAP UP & QUESTIONS
 Say: "That's everything I needed to confirm today. Thank you so much for taking the time - you were great. Congratulations again on moving forward with your solar project!"
 Say: "Amazing - do you have any questions at all for me?"
 - Address questions warmly, using ONLY the information on file. Anything you can't answer: reassure them a {{companyName}} team member will follow up personally.
-Then thank them and end the call.`;
+Then say: "Thank you again for choosing {{companyName}}. That concludes your welcome call - have a great day!" and end the call.`;
 
 function buildSystemPrompt(script) {
   return `You are a warm, friendly, easy-going welcome-call specialist for {{companyName}}.
@@ -89,6 +88,7 @@ RULES (very important):
 - If the homeowner has a question you can answer directly from the information on file, answer it simply. NEVER invent, guess, or improvise details that are not in the information above.
 - If the homeowner is confused, disagrees with any detail, has a question you cannot answer from the information on file, or seems hesitant or uncomfortable: reassure them that it's no problem at all and that a team member from {{companyName}} will personally follow up with them. Make a mental note of exactly what the issue was (it will be reported for human review). Then either continue with the remaining items or, if they prefer, end the call politely.
 - If any information on file is wrong (name, address, phone, terms), note the correction they give, tell them the team will update it and follow up, and continue.
+- Stay alert for possible RED FLAGS, without ever accusing anyone: someone in the background prompting or pressuring answers, the homeowner sounding coerced or afraid to answer freely, or a senior citizen who relies on others for decisions but has no family member or support person involved in the call. Never confront the homeowner about this - stay warm, complete what you can, and these observations will be reported for human review.
 - Do not discuss anything unrelated to the welcome call. If asked, politely steer back.
 - If the homeowner asks whether you are an AI or a real person, answer honestly and cheerfully: you are {{companyName}}'s virtual welcome assistant, and a human team member is always available if they prefer.
 - If any value above says "NOT ON FILE", do NOT state or make up a number. Instead, ask the homeowner to confirm the value from their copy of the agreement (e.g. "Could you confirm the monthly payment amount as it appears in your agreement?") and note what they say.
@@ -136,10 +136,38 @@ const ANALYSIS_SCHEMA = {
       type: 'string',
       description: 'Any corrections the homeowner gave to the info on file. Empty string if none.',
     },
+    confirmed_no_side_promises: {
+      type: 'boolean',
+      description:
+        'Did the homeowner confirm that NO incentives or material promises were made outside of what is written in the contract? False if they mentioned any side promises.',
+    },
+    side_promise_details: {
+      type: 'string',
+      description: 'Details of any promises or incentives the homeowner said were made outside the contract. Empty string if none.',
+    },
+    is_primary_decision_maker: {
+      type: 'boolean',
+      description: 'Is the homeowner the primary decision maker for this home (not relying on a family member or friend)?',
+    },
+    support_person_details: {
+      type: 'string',
+      description: 'Name, age, and relationship of any family member, friend, or support person mentioned or brought on the line. Empty string if none.',
+    },
+    senior_without_support: {
+      type: 'boolean',
+      description:
+        'True if the homeowner appears to be a senior citizen AND no family member or support person was involved in the call or mentioned as part of the process.',
+    },
+    possible_coercion: {
+      type: 'boolean',
+      description:
+        'True if there were any signs of pressure or coercion: someone prompting answers in the background, the homeowner sounding afraid to answer freely, or answers that seemed scripted by someone else.',
+    },
+    coercion_notes: { type: 'string', description: 'What was observed, if possible_coercion is true. Empty string otherwise.' },
     flag_for_review: {
       type: 'boolean',
       description:
-        'True if a human should review this call: confusion, unanswered questions, disagreement, wrong info on file, no recording consent, or an incomplete call.',
+        'True if a human should review this call: confusion, unanswered questions, disagreement, wrong info on file, no recording consent, side promises, possible coercion, a senior without support, or an incomplete call.',
     },
     flag_reason: { type: 'string', description: 'Short reason for the flag. Empty string if not flagged.' },
   },
@@ -264,7 +292,7 @@ function keytermsFor(call) {
   };
   addWords(call.homeowner_name, 3);
   addWords(call.property_address, 3);
-  addWords(COMPANY_NAME, 3);
+  addWords(call.installer || COMPANY_NAME, 3);
   addWords(call.agreement_ref, 3);
   addWords(call.terms, 6); // only distinctive longer words from the terms text
   return [...words].slice(0, 30);
@@ -284,7 +312,9 @@ function overridesFor(call) {
 
 function variableValuesFor(call) {
   return {
-    companyName: COMPANY_NAME,
+    // The installer entered on the form is who the AI speaks on behalf of;
+    // falls back to the site-wide COMPANY_NAME.
+    companyName: call.installer || COMPANY_NAME,
     homeownerName: call.homeowner_name,
     propertyAddress: call.property_address,
     phoneNumber: call.phone,
@@ -292,7 +322,7 @@ function variableValuesFor(call) {
     terms: call.terms || '(no additional details on file)',
     monthlyPayment: call.monthly_payment || 'NOT ON FILE',
     escalator: call.escalator || 'NOT ON FILE',
-    termLength: call.term_length || 'NOT ON FILE',
+    termLength: call.term_length || '25 years',
     offsetPercent: call.offset_percent || 'NOT ON FILE',
   };
 }

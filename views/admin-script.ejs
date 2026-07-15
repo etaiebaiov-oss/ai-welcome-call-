@@ -15,8 +15,8 @@
         changes sync to the voice assistant automatically when you save.
         You can use these placeholders anywhere and they'll be filled in per homeowner:
         <code>{{homeownerName}}</code> <code>{{propertyAddress}}</code> <code>{{phoneNumber}}</code>
-        <code>{{agreementRef}}</code> <code>{{terms}}</code> <code>{{companyName}}</code>
-        <code>{{monthlyPayment}}</code> <code>{{escalator}}</code> <code>{{termLength}}</code> <code>{{offsetPercent}}</code>
+        <code>{{companyName}}</code> <code>{{monthlyPayment}}</code> <code>{{escalator}}</code> <code>{{offsetPercent}}</code>
+        <br><span class="muted">{{companyName}} is the installer entered on the call form (falls back to the site's COMPANY_NAME setting).</span>
       </p>
       <% if (saved) { %><div class="alert alert-success">Script saved and synced to the voice assistant.</div><% } %>
       <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>

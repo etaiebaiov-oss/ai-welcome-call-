@@ -44,8 +44,8 @@
         <label>Property address <span class="req">*</span>
           <input name="property_address" required maxlength="400" value="<%= values.property_address || '' %>" placeholder="Street, city, state, ZIP">
         </label>
-        <label>Agreement / account reference <span class="muted">(optional, if you have it)</span>
-          <input name="agreement_ref" maxlength="200" value="<%= values.agreement_ref || '' %>" placeholder="e.g. contract #, account #">
+        <label>Installer / solar company <span class="muted">(as shown on your agreement)</span>
+          <input name="installer" maxlength="200" value="<%= values.installer || '' %>" placeholder="e.g. Sunrise Solar LLC">
         </label>
         <button class="btn btn-primary btn-lg" type="submit">Continue to my welcome call →</button>
       </form>

@@ -54,11 +54,9 @@ function extractCallFields(body, createdBy) {
     phone: clean(body.phone),
     email: clean(body.email) || null,
     property_address: clean(body.property_address),
-    agreement_ref: clean(body.agreement_ref) || null,
-    terms: clean(body.terms) || null,
+    installer: clean(body.installer) || null,
     monthly_payment: clean(body.monthly_payment) || null,
     escalator: clean(body.escalator) || null,
-    term_length: clean(body.term_length) || null,
     offset_percent: clean(body.offset_percent) || null,
     created_by: createdBy,
   };
@@ -145,6 +143,18 @@ function computeFlags(analysis) {
   }
   if (analysis.confused_about) flags.push(`Confused about: ${analysis.confused_about}`);
   if (analysis.info_corrections) flags.push(`Info corrections given: ${analysis.info_corrections}`);
+  if (analysis.confirmed_no_side_promises === false) {
+    flags.push(`Promises/incentives outside the contract were mentioned: ${analysis.side_promise_details || 'see transcript'}`);
+  }
+  if (analysis.is_primary_decision_maker === false) {
+    flags.push(`Not the primary decision maker — support person: ${analysis.support_person_details || 'details not captured'}`);
+  }
+  if (analysis.senior_without_support === true) {
+    flags.push('Senior citizen with no family member or support person involved');
+  }
+  if (analysis.possible_coercion === true) {
+    flags.push(`Possible coercion or pressure observed: ${analysis.coercion_notes || 'see transcript'}`);
+  }
   if (analysis.flag_for_review === true) {
     flags.push(`AI flagged for review: ${analysis.flag_reason || 'see transcript'}`);
   }

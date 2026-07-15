@@ -47,7 +47,7 @@ CREATE INDEX IF NOT EXISTS idx_calls_status ON calls (status);
 
 // Additive migrations for databases created before these columns existed.
 const existingCols = db.prepare('PRAGMA table_info(calls)').all().map((c) => c.name);
-for (const col of ['monthly_payment', 'escalator', 'term_length', 'offset_percent']) {
+for (const col of ['monthly_payment', 'escalator', 'term_length', 'offset_percent', 'installer']) {
   if (!existingCols.includes(col)) db.exec(`ALTER TABLE calls ADD COLUMN ${col} TEXT`);
 }
 
@@ -76,11 +76,21 @@ function createCall(data) {
   const info = db
     .prepare(
       `INSERT INTO calls (token, homeowner_name, phone, email, property_address, agreement_ref, terms, created_by,
-                          monthly_payment, escalator, term_length, offset_percent)
+                          monthly_payment, escalator, term_length, offset_percent, installer)
        VALUES (@token, @homeowner_name, @phone, @email, @property_address, @agreement_ref, @terms, @created_by,
-               @monthly_payment, @escalator, @term_length, @offset_percent)`
+               @monthly_payment, @escalator, @term_length, @offset_percent, @installer)`
     )
-    .run({ token, monthly_payment: null, escalator: null, term_length: null, offset_percent: null, ...data });
+    .run({
+      token,
+      agreement_ref: null,
+      terms: null,
+      monthly_payment: null,
+      escalator: null,
+      term_length: null,
+      offset_percent: null,
+      installer: null,
+      ...data,
+    });
   return db.prepare('SELECT * FROM calls WHERE id = ?').get(info.lastInsertRowid);
 }
 
