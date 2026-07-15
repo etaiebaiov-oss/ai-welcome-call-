@@ -228,7 +228,13 @@ function resolveVoice(requested) {
 }
 
 function buildVoice() {
-  const voice = { provider: 'vapi', voiceId: resolveVoice(env('VAPI_VOICE_ID')) };
+  // VAPI_VOICE_PROVIDER=11labs enables ElevenLabs voices (requires an
+  // ElevenLabs API key added in the Vapi dashboard under Provider Keys).
+  const provider = env('VAPI_VOICE_PROVIDER') || 'vapi';
+  const voice =
+    provider === '11labs'
+      ? { provider: '11labs', voiceId: env('VAPI_VOICE_ID') || '21m00Tcm4TlvDq8ikWAM' }
+      : { provider: 'vapi', voiceId: resolveVoice(env('VAPI_VOICE_ID')) };
   // Optional global speaking speed (e.g. 0.9 = 10% slower). Only sent when set.
   const speed = parseFloat(env('VAPI_VOICE_SPEED'));
   if (!Number.isNaN(speed) && speed > 0) voice.speed = speed;
