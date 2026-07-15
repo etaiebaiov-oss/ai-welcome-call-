@@ -238,12 +238,13 @@ function buildVoice() {
       ? {
           provider: '11labs',
           voiceId: env('VAPI_VOICE_ID') || '21m00Tcm4TlvDq8ikWAM',
-          model: 'eleven_turbo_v2_5',
+          model: env('VAPI_11LABS_MODEL') || 'eleven_turbo_v2_5',
           // Expressiveness tuning: lower stability + style boost = livelier,
           // more human delivery (higher stability sounds flat/robotic).
-          stability: 0.4,
+          // Tune via env without code changes.
+          stability: parseFloat(env('VAPI_VOICE_STABILITY')) || 0.35,
           similarityBoost: 0.75,
-          style: 0.35,
+          style: parseFloat(env('VAPI_VOICE_STYLE')) || 0.45,
           useSpeakerBoost: true,
         }
       : { provider: 'vapi', voiceId: resolveVoice(env('VAPI_VOICE_ID')) };
@@ -268,6 +269,19 @@ function buildAssistantPayload() {
     transcriber: { provider: 'deepgram', model: 'nova-3' },
     endCallFunctionEnabled: true,
     maxDurationSeconds: 900,
+    // Homeowners pause to think, grab their agreement, or step away for a
+    // moment - be patient. Gentle check-ins during silence, and only give up
+    // after a long quiet stretch instead of the 30s default.
+    silenceTimeoutSeconds: 120,
+    messagePlan: {
+      idleMessages: [
+        'Take your time — I’m still here whenever you’re ready.',
+        'No rush at all! Just let me know when you’re ready to keep going.',
+        'Still with me? We can pick right back up whenever you’re ready.',
+      ],
+      idleTimeoutSeconds: 15,
+      idleMessageMaxSpokenCount: 4,
+    },
     artifactPlan: { recordingEnabled: true },
     analysisPlan: {
       summaryPlan: { enabled: true },
