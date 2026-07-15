@@ -14,6 +14,7 @@ const {
   getCallById,
   getCallByVapiId,
   listCalls,
+  deleteCall,
 } = require('./src/db');
 const auth = require('./src/auth');
 const vapi = require('./src/vapi');
@@ -472,6 +473,21 @@ app.post('/admin/faq', auth.requireAdmin, async (req, res) => {
   } catch (err) {
     res.redirect(`/admin/faq?error=${encodeURIComponent('Saved locally, but syncing to Vapi failed: ' + err.message)}`);
   }
+});
+
+app.post('/admin/calls/:id/delete', auth.requireAdmin, (req, res) => {
+  const call = getCallById(Number(req.params.id));
+  if (!call) return res.status(404).send('Not found');
+  if (call.recording_file) {
+    const filePath = path.join(RECORDINGS_DIR, path.basename(call.recording_file));
+    try {
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    } catch (err) {
+      console.error('Failed to delete recording file:', err.message);
+    }
+  }
+  deleteCall(call.id);
+  res.redirect(`/admin?notice=${encodeURIComponent(`Deleted the call record for ${call.homeowner_name}.`)}`);
 });
 
 app.get('/admin/script', auth.requireAdmin, (req, res) => {

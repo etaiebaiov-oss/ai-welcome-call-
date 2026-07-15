@@ -103,6 +103,9 @@
               <div class="btn-row" style="margin-top:14px">
                 <a class="btn btn-sm" href="/admin/calls/<%= c.id %>">Full record →</a>
                 <% if (c.recording_file) { %><a class="btn btn-sm" href="/admin/calls/<%= c.id %>/recording?download=1">⬇ Recording</a><% } %>
+                <form method="post" action="/admin/calls/<%= c.id %>/delete" class="inline-form">
+                  <button class="btn btn-sm btn-ghost" type="submit" style="color:var(--danger)" onclick="return confirm('Permanently delete <%= c.homeowner_name %>\'s call record<%= c.recording_file ? ' AND its recording' : '' %>? This cannot be undone.')">🗑 Delete</button>
+                </form>
                 <% if (['pending', 'in_progress'].includes(c.status)) { %>
                   <a class="btn btn-sm" href="/call/<%= c.token %>" target="_blank" rel="noopener">▶ Do call now (on this device)</a>
                   <% if (phoneCallsEnabled) { %>

@@ -108,4 +108,5 @@ module.exports = {
   getCallByVapiId: (vapiCallId) =>
     db.prepare('SELECT * FROM calls WHERE vapi_call_id = ?').get(vapiCallId),
   listCalls: () => db.prepare('SELECT * FROM calls ORDER BY created_at DESC').all(),
+  deleteCall: (id) => db.prepare('DELETE FROM calls WHERE id = ?').run(id),
 };
