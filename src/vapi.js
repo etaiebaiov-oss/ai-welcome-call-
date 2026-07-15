@@ -200,7 +200,7 @@ function buildAssistantPayload() {
   const appUrl = env('APP_URL').replace(/\/+$/, '');
   const payload = {
     name: `${COMPANY_NAME} Welcome Call`,
-    firstMessage: `Hi there! Am I speaking with {{homeownerName}}?`,
+    firstMessage: `Hey {{homeownerName}}, can you hear me okay?`,
     model: {
       provider: MODEL_PROVIDER,
       model: MODEL,
