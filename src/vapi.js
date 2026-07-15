@@ -150,6 +150,25 @@ function getScript() {
   return getSetting('script_template') || DEFAULT_SCRIPT;
 }
 
+// Vapi retired its legacy voice set on 2026-03-01; creating assistants with
+// those voices fails. Map retired names to supported equivalents so a stale
+// VAPI_VOICE_ID value degrades gracefully instead of breaking calls.
+const LEGACY_VOICE_MAP = {
+  paige: 'Savannah',
+  kylie: 'Savannah',
+  hana: 'Savannah',
+  lily: 'Savannah',
+  neha: 'Savannah',
+  spencer: 'Elliot',
+  harry: 'Elliot',
+  cole: 'Elliot',
+};
+
+function resolveVoice(requested) {
+  const voice = requested || 'Savannah';
+  return LEGACY_VOICE_MAP[voice.toLowerCase()] || voice;
+}
+
 function buildAssistantPayload() {
   const appUrl = env('APP_URL').replace(/\/+$/, '');
   const payload = {
@@ -161,7 +180,7 @@ function buildAssistantPayload() {
       temperature: 0.4,
       messages: [{ role: 'system', content: buildSystemPrompt(getScript()) }],
     },
-    voice: { provider: 'vapi', voiceId: env('VAPI_VOICE_ID') || 'Paige' },
+    voice: { provider: 'vapi', voiceId: resolveVoice(env('VAPI_VOICE_ID')) },
     transcriber: { provider: 'deepgram', model: 'nova-3' },
     endCallFunctionEnabled: true,
     maxDurationSeconds: 900,
