@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>Approved Answers · Welcome Call Admin</title>
+</head>
+<body>
+  <%- include('partials/adminnav') %>
+
+  <main class="wide">
+    <div class="card">
+      <h1>Approved answers (FAQ)</h1>
+      <p class="muted">
+        These are the ONLY answers the assistant may give when a homeowner asks a question —
+        anything not covered here is politely deferred to a team member and logged for review.
+        Use the <code>Q:</code> / <code>A:</code> format, one blank line between entries.
+        Keep answers short, factual, and pre-approved by your compliance team — remember,
+        every answer is spoken on a recorded line.
+      </p>
+      <% if (saved) { %><div class="alert alert-success">Approved answers saved and synced to the voice assistant.</div><% } %>
+      <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+      <form method="post" action="/admin/faq" class="stack">
+        <textarea name="faq" rows="20" class="code-area"><%= faq %></textarea>
+        <button class="btn btn-primary" type="submit">Save &amp; sync</button>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

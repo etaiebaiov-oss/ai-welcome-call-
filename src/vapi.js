@@ -93,6 +93,9 @@ RULES (very important):
 - If any value above says "NOT ON FILE", do NOT state or make up a number. Instead, ask the homeowner to confirm the value from their copy of the agreement (e.g. "Could you confirm the monthly payment amount as it appears in your agreement?") and note what they say.
 - When the script is complete (or the homeowner wants to stop), thank them warmly and end the call.
 
+APPROVED ANSWERS - if the homeowner asks a question, you may answer ONLY from this list or from the information on file. Keep answers short and friendly, then return to the script. If their question is not covered below, do NOT guess or improvise: reassure them a {{companyName}} team member will follow up personally, and continue. Every question they ask is logged for review either way.
+${getFaq()}
+
 CALL SCRIPT - follow this flow:
 ${script}`;
 }
@@ -126,6 +129,11 @@ const ANALYSIS_SCHEMA = {
     questions_or_concerns: {
       type: 'string',
       description: 'Exact summary of any questions or concerns the homeowner raised. Empty string if none.',
+    },
+    questions_fully_answered: {
+      type: 'boolean',
+      description:
+        'True if every question the homeowner asked was fully answered from the approved answers or the info on file, and they sounded satisfied. False if any question had to be deferred to a team member or the homeowner remained unsure.',
     },
     confused_about: {
       type: 'string',
@@ -175,6 +183,20 @@ const ANALYSIS_SCHEMA = {
 
 function getScript() {
   return getSetting('script_template') || DEFAULT_SCRIPT;
+}
+
+// Admin-curated Q&A the assistant may answer from. Anything not covered here
+// (or in the homeowner's file) is deferred to a human and logged.
+const DEFAULT_FAQ = `(No approved answers yet. Add entries below in this format, then save.)
+
+Q: When does my installation start?
+A: Your project team will reach out to schedule installation after this welcome call and final approvals. Exact timing varies by area.
+
+Q: Who do I contact if I have a problem with my system later?
+A: Your installer handles service. A team member can send you the direct contact info right after this call.`;
+
+function getFaq() {
+  return getSetting('faq_content') || DEFAULT_FAQ;
 }
 
 // Vapi retired its legacy voice set on 2026-03-01; creating assistants with
@@ -350,7 +372,9 @@ async function startPhoneCall(call) {
 module.exports = {
   COMPANY_NAME,
   DEFAULT_SCRIPT,
+  DEFAULT_FAQ,
   getScript,
+  getFaq,
   ensureAssistant,
   overridesFor,
   startPhoneCall,

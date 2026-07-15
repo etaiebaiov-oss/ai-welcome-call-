@@ -139,7 +139,12 @@ function computeFlags(analysis) {
   if (analysis.confirmed_terms === false) flags.push('Agreement terms were not confirmed');
   if (analysis.understood_everything === false) flags.push('Homeowner showed confusion or hesitation');
   if (analysis.had_questions === true) {
-    flags.push(`Homeowner had questions/concerns: ${analysis.questions_or_concerns || 'see transcript'}`);
+    const detail = analysis.questions_or_concerns || 'see transcript';
+    flags.push(
+      analysis.questions_fully_answered === true
+        ? `Homeowner had questions (answered from approved FAQ): ${detail}`
+        : `Homeowner had questions the assistant could not fully answer: ${detail}`
+    );
   }
   if (analysis.confused_about) flags.push(`Confused about: ${analysis.confused_about}`);
   if (analysis.info_corrections) flags.push(`Info corrections given: ${analysis.info_corrections}`);
@@ -371,6 +376,25 @@ app.get('/admin/diagnostics', auth.requireAdmin, async (req, res) => {
   }
 
   res.render('admin-diagnostics', { ...BRAND, checks, allOk: checks.every((c) => c.ok) });
+});
+
+app.get('/admin/faq', auth.requireAdmin, (req, res) => {
+  res.render('admin-faq', {
+    ...BRAND,
+    faq: vapi.getFaq(),
+    saved: Boolean(req.query.saved),
+    error: req.query.error || null,
+  });
+});
+
+app.post('/admin/faq', auth.requireAdmin, async (req, res) => {
+  setSetting('faq_content', String(req.body.faq || '').trim() || vapi.DEFAULT_FAQ);
+  try {
+    if (process.env.VAPI_PRIVATE_KEY) await vapi.ensureAssistant();
+    res.redirect('/admin/faq?saved=1');
+  } catch (err) {
+    res.redirect(`/admin/faq?error=${encodeURIComponent('Saved locally, but syncing to Vapi failed: ' + err.message)}`);
+  }
 });
 
 app.get('/admin/script', auth.requireAdmin, (req, res) => {
