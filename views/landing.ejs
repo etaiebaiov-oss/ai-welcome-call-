@@ -27,28 +27,18 @@
   </header>
 
   <main class="narrow">
-    <div class="card">
-      <h2>Start your welcome call</h2>
-      <p class="muted">Enter your details so we can personalize your call. Your information is only used for this verification.</p>
-      <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
-      <form method="post" action="/calls" class="stack">
-        <label>Full name <span class="req">*</span>
-          <input name="homeowner_name" required maxlength="200" value="<%= values.homeowner_name || '' %>" placeholder="e.g. Jane Smith">
-        </label>
-        <label>Phone number <span class="req">*</span>
-          <input name="phone" required maxlength="40" type="tel" value="<%= values.phone || '' %>" placeholder="e.g. (555) 123-4567">
-        </label>
-        <label>Email <span class="muted">(optional)</span>
-          <input name="email" type="email" maxlength="200" value="<%= values.email || '' %>" placeholder="e.g. jane@email.com">
-        </label>
-        <label>Property address <span class="req">*</span>
-          <input name="property_address" required maxlength="400" value="<%= values.property_address || '' %>" placeholder="Street, city, state, ZIP">
-        </label>
-        <label>Installer / solar company <span class="muted">(as shown on your agreement)</span>
-          <input name="installer" maxlength="200" value="<%= values.installer || '' %>" placeholder="e.g. Sunrise Solar LLC">
-        </label>
-        <button class="btn btn-primary btn-lg" type="submit">Continue to my welcome call →</button>
-      </form>
+    <div class="card center-text">
+      <div class="big-emoji">✉️</div>
+      <h2>Your personal welcome call link</h2>
+      <p class="lead">
+        To make sure your call has your exact agreement details, welcome calls use a
+        <strong>personal link prepared just for you</strong> — check your text messages or email
+        for a link from our team that looks like <code>welcomeai.online/call/…</code>
+      </p>
+      <p class="muted">
+        Can't find your link, or haven't received one yet? Just reach out to your representative
+        and we'll send it over — it takes seconds.
+      </p>
     </div>
     <p class="fineprint">
       Welcome calls are recorded on an acknowledged, recorded line for quality and compliance purposes.

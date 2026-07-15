@@ -49,7 +49,7 @@ app.get('/healthz', (req, res) => res.json({ ok: true }));
 // ---------------------------------------------------------------------------
 
 app.get('/', (req, res) => {
-  res.render('landing', { ...BRAND, error: null, values: {} });
+  res.render('landing', BRAND);
 });
 
 function extractCallFields(body, createdBy) {
@@ -71,14 +71,9 @@ function extractCallFields(body, createdBy) {
   return data;
 }
 
-app.post('/calls', (req, res) => {
-  try {
-    const call = createCall(extractCallFields(req.body, 'homeowner'));
-    res.redirect(`/call/${call.token}`);
-  } catch (err) {
-    res.status(400).render('landing', { ...BRAND, error: err.message, values: req.body });
-  }
-});
+// Self-serve call creation is disabled: homeowners don't have the exact
+// agreement terms, so all calls are created by admins or the board import.
+app.post('/calls', (req, res) => res.redirect('/'));
 
 app.get('/call/:token', (req, res) => {
   const call = getCallByToken(req.params.token);

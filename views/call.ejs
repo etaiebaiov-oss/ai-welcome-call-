@@ -28,6 +28,11 @@
           <div><span class="muted">Name:</span> <%= call.homeowner_name %></div>
           <div><span class="muted">Property:</span> <%= call.property_address %></div>
           <div><span class="muted">Phone on file:</span> <%= call.phone %></div>
+          <% if (call.email) { %><div><span class="muted">Email on file:</span> <%= call.email %></div><% } %>
+          <% if (call.installer) { %><div><span class="muted">Installer:</span> <%= call.installer %></div><% } %>
+          <% if (call.monthly_payment) { %><div><span class="muted">Monthly payment:</span> <%= call.monthly_payment %></div><% } %>
+          <% if (call.escalator) { %><div><span class="muted">Yearly escalator:</span> <%= call.escalator %> · 25 years</div><% } %>
+          <% if (call.offset_percent) { %><div><span class="muted">Expected energy offset:</span> <%= call.offset_percent %></div><% } %>
         </div>
 
         <label class="consent">
