@@ -36,6 +36,25 @@
         <pre class="pre-box"><%= call.terms %></pre>
       <% } %>
 
+      <% if (deal) { %>
+        <h3>Deal details (from import)</h3>
+        <% if (changeOrder) { %>
+          <div class="alert alert-error">⚠️ <strong>Change order / resign:</strong> <%= deal.change_order %></div>
+        <% } %>
+        <div class="detail-grid">
+          <div><span class="muted">Stage</span><br><%= deal.stage || '—' %></div>
+          <div><span class="muted">NTP status</span><br><%= deal.ntp_status || '—' %></div>
+          <div><span class="muted">Finance</span><br><%= deal.finance_type || '—' %></div>
+          <div><span class="muted">Panels</span><br><%= deal.panels || '—' %></div>
+          <div><span class="muted">Current usage (kWh)</span><br><%= deal.current_usage_kwh || '—' %></div>
+          <div><span class="muted">Sold production (kWh)</span><br><%= deal.sold_production_kwh || '—' %></div>
+          <div><span class="muted">Site survey</span><br><%= deal.site_survey || '—' %></div>
+          <div><span class="muted">Date submitted</span><br><%= deal.date_submitted || '—' %></div>
+          <% if (deal.rep) { %><div><span class="muted">Rep</span><br><%= deal.rep %></div><% } %>
+        </div>
+        <% if (deal.notes) { %><p class="muted" style="margin-top:10px">Notes: <%= deal.notes %></p><% } %>
+      <% } %>
+
       <% if (['pending', 'in_progress'].includes(call.status)) { %>
         <h3>Share link</h3>
         <div class="share-row">

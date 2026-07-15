@@ -17,6 +17,10 @@ const {
 } = require('./src/db');
 const auth = require('./src/auth');
 const vapi = require('./src/vapi');
+const multer = require('multer');
+const { parseWorkbook, hasChangeOrder } = require('./src/import');
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -250,7 +254,10 @@ app.post('/admin/logout', (req, res) => {
 });
 
 app.get('/admin', auth.requireAdmin, (req, res) => {
-  const calls = listCalls().map((c) => ({ ...c, flags: JSON.parse(c.flags_json || '[]') }));
+  const calls = listCalls().map((c) => {
+    const deal = c.deal_json ? JSON.parse(c.deal_json) : null;
+    return { ...c, flags: JSON.parse(c.flags_json || '[]'), deal, changeOrder: hasChangeOrder(deal) };
+  });
   const stats = {
     total: calls.length,
     completed: calls.filter((c) => c.status === 'completed').length,
@@ -280,9 +287,12 @@ app.post('/admin/calls/new', auth.requireAdmin, (req, res) => {
 app.get('/admin/calls/:id', auth.requireAdmin, (req, res) => {
   const call = getCallById(Number(req.params.id));
   if (!call) return res.status(404).send('Not found');
+  const deal = call.deal_json ? JSON.parse(call.deal_json) : null;
   res.render('admin-call', {
     ...BRAND,
     call,
+    deal,
+    changeOrder: hasChangeOrder(deal),
     flags: JSON.parse(call.flags_json || '[]'),
     analysis: call.analysis_json ? JSON.parse(call.analysis_json) : null,
     appUrl: appUrl(req),
@@ -317,6 +327,63 @@ app.post('/admin/calls/:id/dial', auth.requireAdmin, async (req, res) => {
     console.error('Outbound dial failed:', err.message);
     res.redirect(`/admin/calls/${call.id}?notice=${encodeURIComponent('Could not start phone call: ' + err.message)}`);
   }
+});
+
+app.get('/admin/import', auth.requireAdmin, (req, res) => {
+  res.render('admin-import', { ...BRAND, result: null, error: null, appUrl: appUrl(req) });
+});
+
+app.post('/admin/import', auth.requireAdmin, upload.single('file'), (req, res) => {
+  const render = (data) => res.render('admin-import', { ...BRAND, result: null, error: null, appUrl: appUrl(req), ...data });
+  if (!req.file) return render({ error: 'Please choose a spreadsheet file (.xlsx or .csv) to upload.' });
+
+  let parsed;
+  try {
+    parsed = parseWorkbook(req.file.buffer);
+  } catch (err) {
+    console.error('import parse failed:', err.message);
+    return render({ error: 'Could not read that file. Make sure it is a valid .xlsx or .csv export.' });
+  }
+  if (parsed.rows.length === 0) {
+    return render({ error: 'No usable rows found. The sheet needs at least homeowner name, address, and phone columns.' });
+  }
+
+  // Skip homeowners who already have a call record (matched by phone digits).
+  const existingPhones = new Set(
+    db.prepare('SELECT phone FROM calls').all().map((r) => String(r.phone).replace(/\D/g, ''))
+  );
+
+  const created = [];
+  let skippedExisting = 0;
+  const seenInFile = new Set();
+  for (const row of parsed.rows) {
+    const digits = row.phone.replace(/\D/g, '');
+    if (seenInFile.has(digits)) continue;
+    seenInFile.add(digits);
+    if (existingPhones.has(digits)) {
+      skippedExisting++;
+      continue;
+    }
+    const { deal, ...fields } = row;
+    const call = createCall({ ...fields, created_by: 'import', deal_json: JSON.stringify(deal) });
+    created.push({
+      name: call.homeowner_name,
+      phone: call.phone,
+      email: call.email || '',
+      changeOrder: hasChangeOrder(deal),
+      link: `${appUrl(req)}/call/${call.token}`,
+    });
+  }
+
+  render({
+    result: {
+      created,
+      skippedExisting,
+      missingContact: parsed.problems.missingContact,
+      badPhone: parsed.problems.badPhone,
+      changeOrders: created.filter((c) => c.changeOrder).length,
+    },
+  });
 });
 
 app.get('/admin/diagnostics', auth.requireAdmin, async (req, res) => {

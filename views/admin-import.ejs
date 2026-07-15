@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>Import Deals · Welcome Call Admin</title>
+</head>
+<body>
+  <%- include('partials/adminnav') %>
+
+  <main class="wide">
+    <div class="card">
+      <h1>Import deals from a spreadsheet</h1>
+      <p class="muted">
+        Upload your deal board (.xlsx or .csv). Each row with a homeowner name, address, and phone becomes a
+        welcome-call link, with the installer, energy offset, and all deal details (stage, NTP status, panels,
+        site survey, notes) attached. Homeowners with a <strong>change order</strong> are flagged automatically.
+        Rows whose phone number already has a call on file are skipped, so re-uploading an updated board is safe.
+      </p>
+      <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+      <form method="post" action="/admin/import" enctype="multipart/form-data" class="stack">
+        <label>Spreadsheet file
+          <input type="file" name="file" accept=".xlsx,.xls,.csv" required>
+        </label>
+        <button class="btn btn-primary" type="submit">Import &amp; create call links</button>
+      </form>
+    </div>
+
+    <% if (result) { %>
+      <div class="card">
+        <h2>Import complete</h2>
+        <div class="stats-row">
+          <div class="stat"><div class="stat-num ok"><%= result.created.length %></div><div class="stat-label">Call links created</div></div>
+          <div class="stat"><div class="stat-num warn"><%= result.changeOrders %></div><div class="stat-label">With change orders ⚠️</div></div>
+          <div class="stat"><div class="stat-num"><%= result.skippedExisting %></div><div class="stat-label">Skipped (already have a call)</div></div>
+          <div class="stat"><div class="stat-num"><%= result.missingContact + result.badPhone %></div><div class="stat-label">Skipped (missing/bad contact info)</div></div>
+        </div>
+
+        <% if (result.created.length) { %>
+          <h3>Share links — copy all as CSV (paste into Sheets/Excel to text or email them out)</h3>
+          <textarea class="code-area" rows="8" readonly onclick="this.select()"><%= 'Name,Phone,Email,Change Order,Link\n' + result.created.map(c => [c.name, c.phone, c.email, c.changeOrder ? 'YES' : '', c.link].join(',')).join('\n') %></textarea>
+          <div class="table-scroll" style="margin-top:16px">
+            <table>
+              <thead><tr><th>Homeowner</th><th>Phone</th><th></th><th>Link</th></tr></thead>
+              <tbody>
+                <% result.created.forEach((c) => { %>
+                  <tr>
+                    <td><strong><%= c.name %></strong></td>
+                    <td><%= c.phone %></td>
+                    <td><% if (c.changeOrder) { %><span class="pill pill-flagged">⚠️ Change order</span><% } %></td>
+                    <td class="cell-wrap"><a href="<%= c.link %>" target="_blank"><%= c.link %></a></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+        <p style="margin-top:14px"><a class="btn btn-primary" href="/admin">Go to dashboard →</a></p>
+      </div>
+    <% } %>
+  </main>
+</body>
+</html>
