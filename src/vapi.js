@@ -2,12 +2,19 @@ const crypto = require('crypto');
 const { getSetting, setSetting, getOrCreateSecret } = require('./db');
 
 const VAPI_BASE = 'https://api.vapi.ai';
-const COMPANY_NAME = process.env.COMPANY_NAME || 'Your Company';
+
+// Environment variables pasted into hosting dashboards often carry invisible
+// trailing newlines/spaces that break URLs and auth headers - always trim.
+function env(name) {
+  return (process.env[name] || '').trim();
+}
+
+const COMPANY_NAME = env('COMPANY_NAME') || 'Your Company';
 
 // The "brain" of the call. Swappable via env vars without touching code -
 // Vapi supports OpenAI, Anthropic (Claude), Google Gemini, and more.
-const MODEL_PROVIDER = process.env.VAPI_MODEL_PROVIDER || 'openai';
-const MODEL = process.env.VAPI_MODEL || 'gpt-4.1';
+const MODEL_PROVIDER = env('VAPI_MODEL_PROVIDER') || 'openai';
+const MODEL = env('VAPI_MODEL') || 'gpt-4.1';
 
 // The default welcome-call script (based on the Welcome & Assurance Call
 // Script v3.0). Fully editable in Admin -> Call Script.
@@ -144,7 +151,7 @@ function getScript() {
 }
 
 function buildAssistantPayload() {
-  const appUrl = (process.env.APP_URL || '').replace(/\/+$/, '');
+  const appUrl = env('APP_URL').replace(/\/+$/, '');
   const payload = {
     name: `${COMPANY_NAME} Welcome Call`,
     firstMessage: `Hi there! Am I speaking with {{homeownerName}}?`,
@@ -154,7 +161,7 @@ function buildAssistantPayload() {
       temperature: 0.4,
       messages: [{ role: 'system', content: buildSystemPrompt(getScript()) }],
     },
-    voice: { provider: 'vapi', voiceId: process.env.VAPI_VOICE_ID || 'Paige' },
+    voice: { provider: 'vapi', voiceId: env('VAPI_VOICE_ID') || 'Paige' },
     transcriber: { provider: 'deepgram', model: 'nova-3' },
     endCallFunctionEnabled: true,
     maxDurationSeconds: 900,
@@ -174,7 +181,7 @@ function buildAssistantPayload() {
 }
 
 async function vapiRequest(method, path, body) {
-  const key = process.env.VAPI_PRIVATE_KEY;
+  const key = env('VAPI_PRIVATE_KEY');
   if (!key) throw new Error('VAPI_PRIVATE_KEY is not set');
   const res = await fetch(`${VAPI_BASE}${path}`, {
     method,
@@ -273,7 +280,7 @@ function variableValuesFor(call) {
 
 // Outbound: the AI calls the homeowner's phone (requires VAPI_PHONE_NUMBER_ID).
 async function startPhoneCall(call) {
-  const phoneNumberId = process.env.VAPI_PHONE_NUMBER_ID;
+  const phoneNumberId = env('VAPI_PHONE_NUMBER_ID');
   if (!phoneNumberId) throw new Error('VAPI_PHONE_NUMBER_ID is not configured');
   const assistantId = await ensureAssistant();
   return vapiRequest('POST', '/call', {

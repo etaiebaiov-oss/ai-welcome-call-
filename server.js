@@ -33,7 +33,7 @@ const BRAND = {
 };
 
 function appUrl(req) {
-  const configured = (process.env.APP_URL || '').replace(/\/+$/, '');
+  const configured = (process.env.APP_URL || '').trim().replace(/\/+$/, '');
   return configured || `${req.protocol}://${req.get('host')}`;
 }
 
@@ -93,7 +93,7 @@ app.get('/api/call-config/:token', async (req, res) => {
   try {
     const assistantId = await vapi.ensureAssistant();
     res.json({
-      publicKey: process.env.VAPI_PUBLIC_KEY,
+      publicKey: (process.env.VAPI_PUBLIC_KEY || '').trim(),
       assistantId,
       overrides: vapi.overridesFor(call),
     });
@@ -221,7 +221,8 @@ app.get('/admin/login', (req, res) => {
 });
 
 app.post('/admin/login', (req, res) => {
-  if (process.env.ADMIN_PASSWORD && auth.safeEqual(req.body.password, process.env.ADMIN_PASSWORD)) {
+  const adminPassword = (process.env.ADMIN_PASSWORD || '').trim();
+  if (adminPassword && auth.safeEqual(String(req.body.password || '').trim(), adminPassword)) {
     auth.login(res);
     return res.redirect('/admin');
   }
@@ -307,8 +308,8 @@ app.get('/admin/diagnostics', auth.requireAdmin, async (req, res) => {
   const checks = [];
   const add = (name, ok, detail, hint) => checks.push({ name, ok, detail, hint: ok ? null : hint });
 
-  const priv = process.env.VAPI_PRIVATE_KEY || '';
-  const pub = process.env.VAPI_PUBLIC_KEY || '';
+  const priv = (process.env.VAPI_PRIVATE_KEY || '').trim();
+  const pub = (process.env.VAPI_PUBLIC_KEY || '').trim();
 
   add('VAPI_PRIVATE_KEY is set', Boolean(priv), priv ? `present (ends in …${priv.slice(-4)})` : 'missing',
     'Add it in Railway → Variables. It is on the Vapi dashboard API Keys page, labeled "Private Key".');
@@ -319,7 +320,7 @@ app.get('/admin/diagnostics', auth.requireAdmin, async (req, res) => {
       'You pasted one key into both variables. Go back to the Vapi API Keys page and copy the other key — there are two.');
   }
 
-  const appU = (process.env.APP_URL || '').replace(/\/+$/, '');
+  const appU = (process.env.APP_URL || '').trim().replace(/\/+$/, '');
   add('APP_URL is set and looks valid', /^https:\/\/[^/]+$/.test(appU), appU || 'missing',
     'Set APP_URL in Railway → Variables to your site address, e.g. https://welcomecall.solar — https, no trailing slash, no path.');
   if (appU) {
