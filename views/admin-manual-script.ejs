@@ -11,6 +11,7 @@
     }
     .script-text { white-space: pre-wrap; font-size: 0.98rem; line-height: 1.75; }
     .script-text .not-on-file { background: #fef3c7; padding: 0 4px; border-radius: 4px; font-weight: 700; }
+    .script-text .your-name { background: #dbeafe; padding: 0 4px; border-radius: 4px; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -41,7 +42,8 @@
 
       <div class="script-text"><%- filledScript
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/NOT ON FILE/g, '<span class="not-on-file">NOT ON FILE</span>') %></div>
+        .replace(/NOT ON FILE/g, '<span class="not-on-file">NOT ON FILE</span>')
+        .replace(/\[YOUR NAME\]/g, '<span class="your-name">[YOUR NAME]</span>') %></div>
     </div>
   </main>
 </body>

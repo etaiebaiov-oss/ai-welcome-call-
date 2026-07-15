@@ -471,15 +471,33 @@ app.post('/admin/faq', auth.requireAdmin, async (req, res) => {
   }
 });
 
+// Rewrites AI-specific lines of the call script for a human caller.
+function humanizeScript(script) {
+  return script
+    .replace(
+      /\(The call opens automatically with: "Hey ([^"]+), can you hear me okay\?"\)\s*\n/i,
+      'Say: "Hi, is this $1?" (wait for a yes)\n'
+    )
+    .replace(/After they answer, say:/i, 'Then say:')
+    .replace(
+      /I['’]m the virtual welcome assistant for ([^.]+)\./i,
+      'This is [YOUR NAME] calling from $1 on the customer success team.'
+    )
+    .replace(
+      /Then end the call\.\s*$/i,
+      'Then wrap up, hang up, and file the recording per company policy.'
+    );
+}
+
 // Print-ready script with this client's details filled in, for a human
 // (e.g. the project manager) to conduct the welcome call personally.
 app.get('/admin/calls/:id/script', auth.requireAdmin, (req, res) => {
   const call = getCallById(Number(req.params.id));
   if (!call) return res.status(404).send('Not found');
   const vars = vapi.overridesFor(call).variableValues;
-  const filledScript = vapi
-    .getScript()
-    .replace(/\{\{(\w+)\}\}/g, (match, key) => (vars[key] !== undefined ? vars[key] : match));
+  const filledScript = humanizeScript(
+    vapi.getScript().replace(/\{\{(\w+)\}\}/g, (match, key) => (vars[key] !== undefined ? vars[key] : match))
+  );
   res.render('admin-manual-script', { ...BRAND, call, filledScript });
 });
 
