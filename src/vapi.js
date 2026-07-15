@@ -182,7 +182,16 @@ const ANALYSIS_SCHEMA = {
 };
 
 function getScript() {
-  return getSetting('script_template') || DEFAULT_SCRIPT;
+  const saved = getSetting('script_template');
+  if (!saved) return DEFAULT_SCRIPT;
+  // Heal scripts saved with HTML-entity escapes by an old Reset-to-default bug.
+  return saved
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
 }
 
 // Admin-curated Q&A the assistant may answer from. Anything not covered here

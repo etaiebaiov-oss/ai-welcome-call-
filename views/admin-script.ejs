@@ -24,10 +24,17 @@
         <textarea name="script" rows="28" class="code-area"><%= script %></textarea>
         <div class="btn-row">
           <button class="btn btn-primary" type="submit">Save &amp; sync script</button>
-          <button class="btn btn-ghost" type="button" onclick="if(confirm('Reset to the default script?')){document.querySelector('.code-area').value=document.getElementById('default-script').textContent;}">Reset to default</button>
+          <button class="btn btn-ghost" type="button" id="reset-btn">Reset to default</button>
         </div>
       </form>
-      <script type="text/plain" id="default-script"><%= defaultScript %></script>
+      <script>
+        const DEFAULT_SCRIPT = <%- JSON.stringify(defaultScript).replace(/</g, '\\u003c') %>;
+        document.getElementById('reset-btn').addEventListener('click', () => {
+          if (confirm('Reset to the default script?')) {
+            document.querySelector('.code-area').value = DEFAULT_SCRIPT;
+          }
+        });
+      </script>
     </div>
   </main>
 </body>

@@ -407,8 +407,20 @@ app.get('/admin/script', auth.requireAdmin, (req, res) => {
   });
 });
 
+// Repair text that was accidentally saved with HTML entity escapes
+// (a past Reset-to-default bug could paste &#34; etc. into the editor).
+function decodeHtmlEntities(text) {
+  return text
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+}
+
 app.post('/admin/script', auth.requireAdmin, async (req, res) => {
-  const script = String(req.body.script || '').trim();
+  const script = decodeHtmlEntities(String(req.body.script || '').trim());
   setSetting('script_template', script || vapi.DEFAULT_SCRIPT);
   try {
     if (process.env.VAPI_PRIVATE_KEY) await vapi.ensureAssistant();
