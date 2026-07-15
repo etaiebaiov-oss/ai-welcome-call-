@@ -236,26 +236,32 @@ function resolveVoice(requested) {
 }
 
 function buildVoice() {
-  // VAPI_VOICE_PROVIDER=11labs enables ElevenLabs voices (requires an
-  // ElevenLabs API key added in the Vapi dashboard under Provider Keys).
+  // Three voice providers, chosen via VAPI_VOICE_PROVIDER:
+  //   vapi (default)  - built-in voices (Savannah, Elliot, Zoe...)
+  //   11labs          - ElevenLabs (needs key in Vapi > Integrations)
+  //   openai          - OpenAI's voices, same TTS family as ChatGPT's voice
+  //                     mode (nova, shimmer, alloy, echo, fable, onyx)
   const provider = env('VAPI_VOICE_PROVIDER') || 'vapi';
-  const voice =
-    provider === '11labs'
-      ? {
-          provider: '11labs',
-          voiceId: env('VAPI_VOICE_ID') || '21m00Tcm4TlvDq8ikWAM',
-          // turbo = fast, responsive turn-taking. (eleven_multilingual_v2 is
-          // richer-sounding but adds noticeable response lag on live calls.)
-          model: env('VAPI_11LABS_MODEL') || 'eleven_turbo_v2_5',
-          // Expressiveness tuning: lower stability + style boost = livelier,
-          // more human delivery (higher stability sounds flat/robotic).
-          // Tune via env without code changes.
-          stability: parseFloat(env('VAPI_VOICE_STABILITY')) || 0.35,
-          similarityBoost: 0.75,
-          style: parseFloat(env('VAPI_VOICE_STYLE')) || 0.45,
-          useSpeakerBoost: true,
-        }
-      : { provider: 'vapi', voiceId: resolveVoice(env('VAPI_VOICE_ID')) };
+  let voice;
+  if (provider === '11labs') {
+    voice = {
+      provider: '11labs',
+      voiceId: env('VAPI_VOICE_ID') || '21m00Tcm4TlvDq8ikWAM',
+      // turbo = fast, responsive turn-taking. (eleven_multilingual_v2 is
+      // richer-sounding but adds noticeable response lag on live calls.)
+      model: env('VAPI_11LABS_MODEL') || 'eleven_turbo_v2_5',
+      // Expressiveness tuning: lower stability + style boost = livelier,
+      // more human delivery (higher stability sounds flat/robotic).
+      stability: parseFloat(env('VAPI_VOICE_STABILITY')) || 0.35,
+      similarityBoost: 0.75,
+      style: parseFloat(env('VAPI_VOICE_STYLE')) || 0.45,
+      useSpeakerBoost: true,
+    };
+  } else if (provider === 'openai') {
+    voice = { provider: 'openai', voiceId: env('VAPI_VOICE_ID') || 'nova' };
+  } else {
+    voice = { provider: 'vapi', voiceId: resolveVoice(env('VAPI_VOICE_ID')) };
+  }
   // Optional global speaking speed (e.g. 0.9 = 10% slower). Only sent when set.
   const speed = parseFloat(env('VAPI_VOICE_SPEED'));
   if (!Number.isNaN(speed) && speed > 0) voice.speed = speed;
