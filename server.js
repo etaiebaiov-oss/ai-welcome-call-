@@ -29,7 +29,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const BRAND = {
   companyName: vapi.COMPANY_NAME,
-  brandColor: process.env.BRAND_COLOR || '#0f4c81',
+  brandColor: (process.env.BRAND_COLOR || '#0284c7').trim(),
 };
 
 function appUrl(req) {

@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <%- include('partials/head') %>
-  <title>Your Welcome Call · <%= companyName %></title>
+  <title>Your Welcome Call</title>
 </head>
 <body class="public">
   <nav class="topbar">
     <div class="topbar-inner">
-      <a class="brand" href="/"><span class="brand-dot"></span><%= companyName %></a>
-      <div class="topbar-links"><span class="pill pill-soft">Welcome Call Center</span></div>
+      <a class="brand" href="/"><span class="brand-mark">☀️</span>Welcome Call Center</a>
+      <div class="topbar-links"><span class="pill pill-soft">🔒 Secure &amp; recorded</span></div>
     </div>
   </nav>
 
@@ -61,7 +61,7 @@
     <% } %>
   </main>
 
-  <footer class="footer">&copy; <%= new Date().getFullYear() %> <%= companyName %> · Welcome Call Center</footer>
+  <footer class="footer">&copy; <%= new Date().getFullYear() %> Welcome Call Center</footer>
 
   <% if (!done) { %>
   <script>window.CALL_TOKEN = <%- JSON.stringify(call.token) %>;</script>
