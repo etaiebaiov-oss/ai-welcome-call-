@@ -400,15 +400,27 @@ function variableValuesFor(call) {
   };
 }
 
+// Vapi requires E.164 ("+13216242607"); records store numbers as typed.
+function toE164(raw) {
+  const s = String(raw || '').trim();
+  if (/^\+\d{8,15}$/.test(s)) return s;
+  const digits = s.replace(/\D/g, '');
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  return null;
+}
+
 // Outbound: the AI calls the homeowner's phone (requires VAPI_PHONE_NUMBER_ID).
 async function startPhoneCall(call) {
   const phoneNumberId = env('VAPI_PHONE_NUMBER_ID');
   if (!phoneNumberId) throw new Error('VAPI_PHONE_NUMBER_ID is not configured');
+  const number = toE164(call.phone);
+  if (!number) throw new Error(`"${call.phone}" is not a valid US phone number - edit the record's phone and try again`);
   const assistantId = await ensureAssistant();
   return vapiRequest('POST', '/call', {
     assistantId,
     phoneNumberId,
-    customer: { number: call.phone },
+    customer: { number },
     assistantOverrides: overridesFor(call),
   });
 }
