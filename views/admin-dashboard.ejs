@@ -108,6 +108,7 @@
                 </form>
                 <% if (['pending', 'in_progress'].includes(c.status)) { %>
                   <a class="btn btn-sm" href="/call/<%= c.token %>" target="_blank" rel="noopener">▶ Do call now (on this device)</a>
+                  <a class="btn btn-sm" href="/admin/calls/<%= c.id %>/script">📄 Manual script</a>
                   <% if (phoneCallsEnabled) { %>
                     <form method="post" action="/admin/calls/<%= c.id %>/dial" class="inline-form">
                       <button class="btn btn-sm btn-primary" type="submit" onclick="return confirm('The AI will call <%= c.phone %> right now. Continue?')">📞 AI calls their phone</button>

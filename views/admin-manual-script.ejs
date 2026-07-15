@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>Manual Script · <%= call.homeowner_name %></title>
+  <style>
+    @media print {
+      .topbar, .no-print { display: none !important; }
+      body { background: #fff; }
+      .card { border: none; box-shadow: none; padding: 0; }
+    }
+    .script-text { white-space: pre-wrap; font-size: 0.98rem; line-height: 1.75; }
+    .script-text .not-on-file { background: #fef3c7; padding: 0 4px; border-radius: 4px; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <%- include('partials/adminnav') %>
+
+  <main class="wide">
+    <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px">
+      <a class="muted" href="/admin/calls/<%= call.id %>">← Back to <%= call.homeowner_name %>'s record</a>
+      <button class="btn btn-primary" onclick="window.print()">🖨 Print / save as PDF</button>
+    </div>
+
+    <div class="card">
+      <h1>Welcome call script — <%= call.homeowner_name %></h1>
+      <div class="detail-grid" style="margin-bottom:14px">
+        <div><span class="muted">Phone</span><br><%= call.phone %></div>
+        <div><span class="muted">Property</span><br><%= call.property_address %></div>
+        <div><span class="muted">Installer</span><br><%= call.installer || '—' %></div>
+        <div><span class="muted">Email</span><br><%= call.email || '—' %></div>
+      </div>
+
+      <div class="alert alert-error no-print">
+        <strong>Before you dial:</strong> this manual call is NOT recorded or logged by the platform —
+        conduct it on your company's recorded line, get the recording-consent acknowledgment at the start
+        exactly as scripted, and file the recording per policy. Anything highlighted
+        <span class="not-on-file">like this</span> is missing from the record — ask the homeowner to confirm
+        it from their agreement copy.
+      </div>
+
+      <div class="script-text"><%- filledScript
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/NOT ON FILE/g, '<span class="not-on-file">NOT ON FILE</span>') %></div>
+    </div>
+  </main>
+</body>
+</html>

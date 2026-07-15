@@ -61,6 +61,8 @@
       <% } %>
 
       <% if (['pending', 'in_progress'].includes(call.status)) { %>
+        <h3>Do the call</h3>
+        <p><a class="btn" href="/admin/calls/<%= call.id %>/script">📄 Manual call script (for a human caller)</a></p>
         <h3>Share link</h3>
         <div class="share-row">
           <input class="share-input" readonly value="<%= appUrl %>/call/<%= call.token %>" onclick="this.select()">

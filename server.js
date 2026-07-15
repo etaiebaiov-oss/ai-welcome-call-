@@ -471,6 +471,18 @@ app.post('/admin/faq', auth.requireAdmin, async (req, res) => {
   }
 });
 
+// Print-ready script with this client's details filled in, for a human
+// (e.g. the project manager) to conduct the welcome call personally.
+app.get('/admin/calls/:id/script', auth.requireAdmin, (req, res) => {
+  const call = getCallById(Number(req.params.id));
+  if (!call) return res.status(404).send('Not found');
+  const vars = vapi.overridesFor(call).variableValues;
+  const filledScript = vapi
+    .getScript()
+    .replace(/\{\{(\w+)\}\}/g, (match, key) => (vars[key] !== undefined ? vars[key] : match));
+  res.render('admin-manual-script', { ...BRAND, call, filledScript });
+});
+
 app.post('/admin/calls/:id/delete', auth.requireAdmin, (req, res) => {
   const call = getCallById(Number(req.params.id));
   if (!call) return res.status(404).send('Not found');
