@@ -40,10 +40,10 @@ Say: "Perfect. To make sure your file is correct, can you confirm your first and
 - On file: name is {{homeownerName}}, property address is {{propertyAddress}}. A reasonable match is fine.
 Say: "Thank you - and congrats again on moving forward with your project. I just want to make sure everything is clear and documented before the next stage. A few quick questions - okay?"
 Then ask one at a time:
-- "Did you sign the DocuSign contract sent to your email, and can you confirm that email address for me?"
-- "And did you receive copies of the signed contract at that same email?"
+- "Did you sign the DocuSign agreement sent to your email, and can you confirm that email address for me?"
+- "And did you receive copies of the signed agreement at that same email?"
 - "What's the best phone number to have on file for you?" (Do NOT say any number - let them state it. For reference only, the number on file is {{phoneNumber}}; if what they say differs, note the correction.)
-- "Standard question we ask every customer - can you confirm nothing was promised or offered to you outside of what's written in the contract?"
+- "Standard question we ask every customer - can you confirm nothing was promised or offered to you outside of what's written in the agreement?"
 - "Last one for our records - could you share your age?"
 
 STEP 4 - UNDERSTANDING THE AGREEMENT
@@ -146,11 +146,11 @@ const ANALYSIS_SCHEMA = {
     confirmed_no_side_promises: {
       type: 'boolean',
       description:
-        'Did the homeowner confirm that NO incentives or material promises were made outside of what is written in the contract? False if they mentioned any side promises.',
+        'Did the homeowner confirm that NO incentives or material promises were made outside of what is written in the agreement? False if they mentioned any side promises.',
     },
     side_promise_details: {
       type: 'string',
-      description: 'Details of any promises or incentives the homeowner said were made outside the contract. Empty string if none.',
+      description: 'Details of any promises or incentives the homeowner said were made outside the agreement. Empty string if none.',
     },
     is_primary_decision_maker: {
       type: 'boolean',
