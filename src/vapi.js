@@ -238,7 +238,9 @@ function buildVoice() {
       ? {
           provider: '11labs',
           voiceId: env('VAPI_VOICE_ID') || '21m00Tcm4TlvDq8ikWAM',
-          model: env('VAPI_11LABS_MODEL') || 'eleven_turbo_v2_5',
+          // multilingual_v2 = ElevenLabs' richest model: noticeably more
+          // natural than the fast turbo default, slightly slower to respond.
+          model: env('VAPI_11LABS_MODEL') || 'eleven_multilingual_v2',
           // Expressiveness tuning: lower stability + style boost = livelier,
           // more human delivery (higher stability sounds flat/robotic).
           // Tune via env without code changes.
