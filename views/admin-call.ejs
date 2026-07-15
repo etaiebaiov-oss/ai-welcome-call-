@@ -67,8 +67,12 @@
           <button class="btn btn-sm" onclick="navigator.clipboard.writeText('<%= appUrl %>/call/<%= call.token %>');this.textContent='Copied!'">Copy</button>
         </div>
         <% if (phoneCallsEnabled) { %>
-          <form method="post" action="/admin/calls/<%= call.id %>/dial" class="inline-form" style="margin-top:12px">
-            <button class="btn btn-primary" type="submit" onclick="return confirm('The AI will call <%= call.phone %> now. Continue?')">📞 Have the AI call their phone instead</button>
+          <form method="post" action="/admin/calls/<%= call.id %>/dial" style="margin-top:12px">
+            <div class="btn-row" style="align-items:stretch">
+              <input name="override_number" placeholder="Different number (optional — e.g. your own, to preview)" style="flex:1;min-width:240px">
+              <button class="btn btn-primary" type="submit" onclick="return confirm('The AI will place this call now. Continue?')">📞 Have the AI call</button>
+            </div>
+            <p class="fineprint">Leave the box empty to call the number on file (<%= call.phone %>). Enter a different number to call that instead — the AI still uses this homeowner's script and details.</p>
           </form>
         <% } %>
       <% } %>

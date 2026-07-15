@@ -297,6 +297,27 @@ function buildAssistantPayload() {
       secret: getOrCreateSecret('webhook_secret'),
     };
   }
+  // Optional live human handoff: if HUMAN_TRANSFER_NUMBER is set, the AI can
+  // transfer the call to a real person when the homeowner asks for one.
+  const transferNumber = toE164(env('HUMAN_TRANSFER_NUMBER'));
+  if (transferNumber) {
+    payload.model.tools = [
+      {
+        type: 'transferCall',
+        destinations: [
+          {
+            type: 'number',
+            number: transferNumber,
+            message: 'Of course! Let me connect you with a team member right now — one moment.',
+          },
+        ],
+      },
+    ];
+    payload.model.messages[0].content += `
+
+HUMAN TRANSFER:
+- If the homeowner clearly asks to speak with a real person, a manager, or their representative - or if they are upset, or you cannot complete the call for any reason and they want help now - use the transferCall tool to connect them to the team at ${transferNumber}. Announce the transfer warmly first. Do not transfer for ordinary questions you can handle or note for follow-up.`;
+  }
   return payload;
 }
 
@@ -411,11 +432,14 @@ function toE164(raw) {
 }
 
 // Outbound: the AI calls the homeowner's phone (requires VAPI_PHONE_NUMBER_ID).
-async function startPhoneCall(call) {
+// Pass overrideNumber to dial a different number than the one on file
+// (e.g. call yourself to preview, or a homeowner's alternate line).
+async function startPhoneCall(call, overrideNumber) {
   const phoneNumberId = env('VAPI_PHONE_NUMBER_ID');
   if (!phoneNumberId) throw new Error('VAPI_PHONE_NUMBER_ID is not configured');
-  const number = toE164(call.phone);
-  if (!number) throw new Error(`"${call.phone}" is not a valid US phone number - edit the record's phone and try again`);
+  const rawNumber = overrideNumber || call.phone;
+  const number = toE164(rawNumber);
+  if (!number) throw new Error(`"${rawNumber}" is not a valid US phone number - check it and try again`);
   const assistantId = await ensureAssistant();
   return vapiRequest('POST', '/call', {
     assistantId,

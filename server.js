@@ -319,7 +319,8 @@ app.post('/admin/calls/:id/dial', auth.requireAdmin, async (req, res) => {
   const call = getCallById(Number(req.params.id));
   if (!call) return res.status(404).send('Not found');
   try {
-    const result = await vapi.startPhoneCall(call);
+    const overrideNumber = String(req.body.override_number || '').trim() || null;
+    const result = await vapi.startPhoneCall(call, overrideNumber);
     db.prepare(
       `UPDATE calls SET vapi_call_id = ?, status = 'in_progress', started_at = datetime('now') WHERE id = ?`
     ).run(result.id, call.id);
