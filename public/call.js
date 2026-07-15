@@ -12,6 +12,26 @@ const errorBox = document.getElementById('call-error');
 const consentRow = document.querySelector('.consent');
 
 let vapi = null;
+let wakeLock = null;
+let callActive = false;
+
+// Phones lock their screens mid-call, which suspends the browser tab and
+// kills the WebRTC connection ("customer disconnected"). Keep the screen
+// awake for the duration of the call, and re-acquire if the user briefly
+// switches away and comes back.
+async function keepScreenAwake() {
+  try {
+    if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+  } catch (_) { /* not supported or denied - harmless */ }
+}
+
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && callActive) keepScreenAwake();
+});
 
 consentCheck.addEventListener('change', () => {
   startBtn.disabled = !consentCheck.checked;
@@ -45,6 +65,8 @@ startBtn.addEventListener('click', async () => {
 
     vapi.on('call-start', () => {
       statusText.textContent = 'Connected — say hello!';
+      callActive = true;
+      keepScreenAwake();
     });
 
     vapi.on('speech-start', () => { statusText.textContent = 'Assistant is speaking…'; });
@@ -55,6 +77,8 @@ startBtn.addEventListener('click', async () => {
     });
 
     vapi.on('call-end', () => {
+      callActive = false;
+      releaseWakeLock();
       inCall.classList.add('hidden');
       postCall.classList.remove('hidden');
       if (consentRow) consentRow.classList.add('hidden');
