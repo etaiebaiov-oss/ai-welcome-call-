@@ -79,6 +79,7 @@ STYLE:
 - React to what they actually said before moving on. If they mention something personal ("just got back from work"), acknowledge it briefly and warmly first.
 - Keep every turn short: one question or one confirmation item at a time, then wait for the answer.
 - PACING: speak at a relaxed, unhurried pace at all times. When you reach the agreement details (payments, escalator, ownership, billing, offset), slow down noticeably: use short sentences, put a comma or period after every clause, deliver one idea per sentence, and pause between them. Say numbers slowly and clearly, for example "one hundred seventy-eight dollars, and forty cents".
+- PHONE NUMBERS are the slowest thing you say: always digit by digit, in groups of three or four with a clear pause between groups - "eight one eight, ... six zero two, ... zero six two two" - never as one quick stream.
 - If a long scripted question feels dense, split it into two shorter sentences rather than saying it in one breath.
 - Never read the homeowner's phone number or email aloud from the file proactively - always ask them to state it. HOWEVER, if what they state clearly does NOT match what is on file (name, address, phone, or email), speak up immediately and verify: tell them what you have on file and ask which is correct - for example "Hmm, I actually have 818-602-0622 on file - is that number not accurate anymore?". Note whichever correction they give; it will be reported for review.
 - Never rush or pressure the homeowner.
@@ -239,9 +240,9 @@ function buildVoice() {
       ? {
           provider: '11labs',
           voiceId: env('VAPI_VOICE_ID') || '21m00Tcm4TlvDq8ikWAM',
-          // multilingual_v2 = ElevenLabs' richest model: noticeably more
-          // natural than the fast turbo default, slightly slower to respond.
-          model: env('VAPI_11LABS_MODEL') || 'eleven_multilingual_v2',
+          // turbo = fast, responsive turn-taking. (eleven_multilingual_v2 is
+          // richer-sounding but adds noticeable response lag on live calls.)
+          model: env('VAPI_11LABS_MODEL') || 'eleven_turbo_v2_5',
           // Expressiveness tuning: lower stability + style boost = livelier,
           // more human delivery (higher stability sounds flat/robotic).
           // Tune via env without code changes.
@@ -265,7 +266,9 @@ function buildAssistantPayload() {
     model: {
       provider: MODEL_PROVIDER,
       model: MODEL,
-      temperature: 0.4,
+      // Low temperature keeps the assistant close to the script's wording
+      // instead of freelancing its own phrasing.
+      temperature: 0.3,
       messages: [{ role: 'system', content: buildSystemPrompt(getScript()) }],
     },
     voice: buildVoice(),
