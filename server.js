@@ -472,8 +472,12 @@ app.post('/admin/faq', auth.requireAdmin, async (req, res) => {
 });
 
 // Rewrites AI-specific lines of the call script for a human caller.
-function humanizeScript(script) {
+function humanizeScript(script, homeownerName) {
   return script
+    .replace(
+      /\(The call opens automatically with: "Hey there! Can you hear me okay\?"\)\s*\n/i,
+      `Say: "Hi, is this ${homeownerName}?" (wait for a yes)\n`
+    )
     .replace(
       /\(The call opens automatically with: "Hey ([^"]+), can you hear me okay\?"\)\s*\n/i,
       'Say: "Hi, is this $1?" (wait for a yes)\n'
@@ -496,7 +500,8 @@ app.get('/admin/calls/:id/script', auth.requireAdmin, (req, res) => {
   if (!call) return res.status(404).send('Not found');
   const vars = vapi.overridesFor(call).variableValues;
   const filledScript = humanizeScript(
-    vapi.getScript().replace(/\{\{(\w+)\}\}/g, (match, key) => (vars[key] !== undefined ? vars[key] : match))
+    vapi.getScript().replace(/\{\{(\w+)\}\}/g, (match, key) => (vars[key] !== undefined ? vars[key] : match)),
+    call.homeowner_name
   );
   res.render('admin-manual-script', { ...BRAND, call, filledScript });
 });

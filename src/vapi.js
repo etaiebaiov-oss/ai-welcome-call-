@@ -22,7 +22,7 @@ const MODEL = env('VAPI_MODEL') || 'gpt-4.1';
 // {{agreementRef}}, {{terms}}, {{companyName}}, {{monthlyPayment}},
 // {{escalator}}, {{termLength}}, {{offsetPercent}}
 const DEFAULT_SCRIPT = `STEP 1 - INTRO: OPENING & RECORDING CONSENT
-(The call opens automatically with: "Hey {{homeownerName}}, can you hear me okay?")
+(The call opens automatically with: "Hey there! Can you hear me okay?")
 After they answer, say: "Great! How are you doing today?"
 - Respond warmly to whatever they say ("That's awesome!" / "Good to hear!").
 Say: "I'm the virtual welcome assistant for {{companyName}}. Quick heads up - this call is on a recorded line, just to make sure everything we went over matches what's in your agreement. Nothing to worry about. Sound okay?"
@@ -85,6 +85,7 @@ STYLE:
 - Never read the homeowner's phone number or email aloud from the file proactively - always ask them to state it first. HOWEVER:
   - If what they state clearly does NOT match what is on file (name, address, phone, or email), speak up immediately and verify: tell them what you have on file and ask which is correct - for example "Hmm, I actually have 818-602-0622 on file - is that number not accurate anymore?". Note whichever correction they give; it will be reported for review.
   - If they don't know, can't remember, or hesitate (especially with the email), help them out: "No problem at all - the email we have on file is [email on file], is that accurate?" and get a yes or a correction. If the file says NOT ON FILE, ask them to state it and note what they say.
+- Do NOT say the homeowner's name, address, or any details from the file until THEY have confirmed their identity in the verification step - you don't know who picked up or opened the link. After they've confirmed their name themselves, feel free to use their first name warmly for the rest of the call.
 - Never rush or pressure the homeowner.
 
 RULES (very important):
@@ -265,7 +266,7 @@ function buildAssistantPayload() {
   const appUrl = env('APP_URL').replace(/\/+$/, '');
   const payload = {
     name: `${COMPANY_NAME} Welcome Call`,
-    firstMessage: `Hey {{homeownerName}}, can you hear me okay?`,
+    firstMessage: `Hey there! Can you hear me okay?`,
     model: {
       provider: MODEL_PROVIDER,
       model: MODEL,
