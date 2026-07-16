@@ -484,6 +484,10 @@ function humanizeScript(script, homeownerName) {
     )
     .replace(/After they answer, say:/i, 'Then say:')
     .replace(
+      /I['’]m the virtual assistant for the welcome team at ([^.]+)\./i,
+      'This is [YOUR NAME] calling from the welcome team at $1.'
+    )
+    .replace(
       /I['’]m the virtual welcome assistant for ([^.]+)\./i,
       'This is [YOUR NAME] calling from $1 on the customer success team.'
     )
