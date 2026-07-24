@@ -33,8 +33,8 @@
       <form method="post" action="/admin/analyze" enctype="multipart/form-data" class="stack">
         <label>Which client is this recording for?
           <select name="call_id" id="client-select" required>
-            <option value="">Select a client…</option>
-            <option value="new">＋ New client (not in the system yet)</option>
+            <option value="auto" selected>Auto-detect from the recording (recommended)</option>
+            <option value="new">New client — enter details manually</option>
             <% calls.forEach((c) => { %>
               <option value="<%= c.id %>"><%= c.homeowner_name %> · <%= c.phone %> (<%= c.status.replace('_',' ') %>)</option>
             <% }) %>
@@ -71,7 +71,12 @@
           <input type="file" name="audio" accept=".mp3,.m4a,.wav,.aac,.ogg,audio/*" required>
         </label>
         <button class="btn btn-primary" type="submit" <%= hasKey ? '' : 'disabled' %>><%- include('partials/icon', { name: 'search', size: 15 }) %> Transcribe &amp; audit recording</button>
-        <p class="fineprint">Processing takes 30–90 seconds depending on call length. You'll land on the client's record with the results.</p>
+        <p class="fineprint">
+          Auto-detect listens for the name, address, and phone number the homeowner states during the call,
+          matches them against your client list, and attaches the audit to that record — or creates a new
+          record if nobody matches. Pick a client manually any time the recording is unclear.
+          Processing takes 30–90 seconds; you'll land on the client's record with the results.
+        </p>
       </form>
     </div>
   </main>

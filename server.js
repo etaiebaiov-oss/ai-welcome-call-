@@ -23,7 +23,7 @@ const { parseWorkbook, hasChangeOrder } = require('./src/import');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 const uploadAudio = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
-const { transcribeAudio, analyzeTranscript } = require('./src/analyze');
+const { transcribeAudio, analyzeTranscript, extractIdentity } = require('./src/analyze');
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -414,13 +414,72 @@ app.get('/admin/analyze', auth.requireAdmin, (req, res) => {
   });
 });
 
+// Fuzzy-match an extracted identity against existing client records.
+// Phone digits are the strongest signal; name and address tokens back it up.
+function matchClientByIdentity(identity) {
+  const digits = (s) => String(s || '').replace(/\D/g, '');
+  const tokens = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean);
+  const idPhone = digits(identity.phone);
+  const idName = tokens(identity.homeowner_name);
+  const idAddr = tokens(identity.property_address);
+  let best = null;
+  let bestScore = 0;
+  for (const c of listCalls()) {
+    let score = 0;
+    const cPhone = digits(c.phone);
+    if (idPhone.length >= 7 && cPhone && (cPhone === idPhone || cPhone.endsWith(idPhone) || idPhone.endsWith(cPhone))) score += 3;
+    const cName = tokens(c.homeowner_name);
+    const nameHits = idName.filter((t) => t.length > 2 && cName.includes(t)).length;
+    score += nameHits >= 2 ? 2 : nameHits === 1 ? 1 : 0;
+    const cAddr = tokens(c.property_address);
+    const addrHits = idAddr.filter((t) => cAddr.includes(t)).length;
+    score += addrHits >= 2 ? 2 : addrHits === 1 ? 0.5 : 0;
+    if (score > bestScore) { bestScore = score; best = c; }
+  }
+  return bestScore >= 3 ? best : null;
+}
+
 app.post('/admin/analyze', auth.requireAdmin, uploadAudio.single('audio'), async (req, res) => {
   const fail = (msg) => res.redirect(`/admin/analyze?error=${encodeURIComponent(msg)}`);
   const apiKey = (process.env.OPENAI_API_KEY || '').trim();
   if (!apiKey) return fail('Set the OPENAI_API_KEY variable in Railway first (see the note on this page).');
-  let call;
-  if (req.body.call_id === 'new') {
-    try {
+  if (!req.file) return fail('Choose an audio file (.mp3, .m4a, .wav — up to 25MB).');
+
+  try {
+    const transcript = await transcribeAudio(req.file.buffer, req.file.originalname, apiKey);
+
+    let call;
+    let matchNotice = '';
+    if (req.body.call_id === 'auto' || !req.body.call_id) {
+      const identity = await extractIdentity({ transcript, apiKey });
+      call = matchClientByIdentity(identity);
+      if (call) {
+        matchNotice = `Auto-matched this recording to ${call.homeowner_name}. `;
+      } else if (
+        identity.homeowner_name &&
+        identity.property_address &&
+        String(identity.phone || '').replace(/\D/g, '').length >= 10
+      ) {
+        call = createCall(
+          extractCallFields(
+            {
+              homeowner_name: identity.homeowner_name,
+              phone: identity.phone,
+              property_address: identity.property_address,
+              email: identity.email,
+              installer: identity.installer,
+              script_variant: /pacific|pss/i.test(identity.installer || '') ? 'pss' : 'sw',
+            },
+            'upload'
+          )
+        );
+        matchNotice = `No existing client matched — created a new record for ${call.homeowner_name}. `;
+      } else {
+        return fail(
+          `Couldn't auto-detect the client from this recording (heard name: "${identity.homeowner_name || 'none'}", address: "${identity.property_address || 'none'}", phone: "${identity.phone || 'none'}"). Pick the client manually and try again.`
+        );
+      }
+    } else if (req.body.call_id === 'new') {
       call = createCall(
         extractCallFields(
           {
@@ -434,17 +493,11 @@ app.post('/admin/analyze', auth.requireAdmin, uploadAudio.single('audio'), async
           'upload'
         )
       );
-    } catch (err) {
-      return fail(err.message);
+    } else {
+      call = getCallById(Number(req.body.call_id));
     }
-  } else {
-    call = getCallById(Number(req.body.call_id));
-  }
-  if (!call) return fail('Pick which client this recording belongs to.');
-  if (!req.file) return fail('Choose an audio file (.mp3, .m4a, .wav — up to 25MB).');
+    if (!call) return fail('Pick which client this recording belongs to.');
 
-  try {
-    const transcript = await transcribeAudio(req.file.buffer, req.file.originalname, apiKey);
     const analysis = await analyzeTranscript({
       transcript,
       call,
@@ -471,7 +524,7 @@ app.post('/admin/analyze', auth.requireAdmin, uploadAudio.single('audio'), async
       filename,
       call.id
     );
-    res.redirect(`/admin/calls/${call.id}`);
+    res.redirect(`/admin/calls/${call.id}${matchNotice ? `?notice=${encodeURIComponent(matchNotice + 'Audit results below.')}` : ''}`);
   } catch (err) {
     console.error('Recording analysis failed:', err.message);
     fail(`Analysis failed: ${err.message}`);

@@ -70,4 +70,31 @@ async function analyzeTranscript({ transcript, call, script, apiKey }) {
   return JSON.parse(data.choices[0].message.content);
 }
 
-module.exports = { transcribeAudio, analyzeTranscript };
+// Pull the homeowner's stated identity out of a transcript so the recording
+// can be auto-matched to a client record.
+async function extractIdentity({ transcript, apiKey }) {
+  const res = await fetch(`${OPENAI_BASE}/chat/completions`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gpt-4.1',
+      temperature: 0,
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'system',
+          content:
+            'Extract the HOMEOWNER\'s identity from this welcome-call transcript. Respond with STRICT JSON: {"homeowner_name": string, "property_address": string, "phone": string, "email": string, "installer": string} - use "" for anything not stated. Use what the homeowner themselves confirmed or stated, not what the agent guessed.',
+        },
+        { role: 'user', content: transcript },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Identity extraction failed (${res.status}): ${text.slice(0, 300)}`);
+  }
+  return JSON.parse((await res.json()).choices[0].message.content);
+}
+
+module.exports = { transcribeAudio, analyzeTranscript, extractIdentity };
