@@ -8,6 +8,14 @@
   <%- include('partials/adminnav') %>
 
   <main class="wide">
+    <% const fmtDate = (s) => {
+      try {
+        const d = new Date(String(s).replace(' ', 'T') + 'Z');
+        if (isNaN(d)) return s;
+        return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+          + ' · ' + d.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
+      } catch (e) { return s; }
+    }; %>
     <div class="page-head">
       <div>
         <h1>Welcome Calls</h1>
@@ -38,20 +46,20 @@
 
     <div class="stats-row">
       <div class="stat stat-info">
-        <span class="stat-label"><%- include('partials/icon', { name: 'phone', size: 14 }) %> Total calls</span>
-        <span class="stat-num"><%= stats.total %></span>
+        <span class="stat-icon"><%- include('partials/icon', { name: 'phone', size: 18 }) %></span>
+        <div><span class="stat-label">Total calls</span><span class="stat-num"><%= stats.total %></span></div>
       </div>
       <div class="stat stat-success">
-        <span class="stat-label"><%- include('partials/icon', { name: 'check-circle', size: 14 }) %> Completed clean</span>
-        <span class="stat-num ok"><%= stats.completed %></span>
+        <span class="stat-icon"><%- include('partials/icon', { name: 'check-circle', size: 18 }) %></span>
+        <div><span class="stat-label">Completed clean</span><span class="stat-num ok"><%= stats.completed %></span></div>
       </div>
       <div class="stat stat-warn">
-        <span class="stat-label"><%- include('partials/icon', { name: 'alert', size: 14 }) %> Flagged for review</span>
-        <span class="stat-num warn"><%= stats.flagged %></span>
+        <span class="stat-icon"><%- include('partials/icon', { name: 'alert', size: 18 }) %></span>
+        <div><span class="stat-label">Flagged for review</span><span class="stat-num warn"><%= stats.flagged %></span></div>
       </div>
       <div class="stat">
-        <span class="stat-label"><%- include('partials/icon', { name: 'clock', size: 14 }) %> Pending / in progress</span>
-        <span class="stat-num"><%= stats.pending %></span>
+        <span class="stat-icon"><%- include('partials/icon', { name: 'clock', size: 18 }) %></span>
+        <div><span class="stat-label">Pending / in progress</span><span class="stat-num"><%= stats.pending %></span></div>
       </div>
     </div>
 
@@ -78,6 +86,15 @@
         </div>
       </div>
 
+      <div class="card list-card">
+        <div class="list-head" aria-hidden="true">
+          <span></span>
+          <span>Homeowner</span>
+          <span>Source</span>
+          <span>Review status</span>
+          <span>Issues</span>
+          <span class="th-right">Last updated</span>
+        </div>
       <% calls.forEach((c) => {
         const rowClass = c.status === 'completed' ? 'row-completed' : c.status === 'flagged' ? 'row-flagged' : 'row-pending';
       %>
@@ -92,8 +109,8 @@
               <strong><%= c.homeowner_name %></strong>
               <span class="sub"><%= c.phone %></span>
             </span>
-            <span class="badge-plain"><%= c.script_variant === 'pss' ? 'PSS' : 'SW' %></span>
-            <span class="acc-pills">
+            <span class="cell-source"><%= c.script_variant === 'pss' ? 'PSS' : 'SW' %></span>
+            <span class="cell-status">
               <% if (c.status === 'completed') { %>
                 <span class="badge badge-success"><%- include('partials/icon', { name: 'check', size: 12 }) %> Completed</span>
               <% } else if (c.status === 'flagged') { %>
@@ -103,14 +120,17 @@
               <% } else { %>
                 <span class="badge badge-neutral"><%- include('partials/icon', { name: 'clock', size: 12 }) %> Pending</span>
               <% } %>
+            </span>
+            <span class="cell-issues">
               <% if (c.flags.length) { %>
-                <span class="badge badge-danger"><%- include('partials/icon', { name: 'alert', size: 12 }) %> <%= c.flags.length %> issue<%= c.flags.length === 1 ? '' : 's' %></span>
+                <span class="chip-issues"><%- include('partials/icon', { name: 'alert', size: 12 }) %> <%= c.flags.length %> issue<%= c.flags.length === 1 ? '' : 's' %></span>
               <% } %>
               <% if (c.changeOrder) { %>
-                <span class="badge badge-warn"><%- include('partials/icon', { name: 'edit', size: 12 }) %> Change order</span>
+                <span class="mini-flag"><%- include('partials/icon', { name: 'edit', size: 12 }) %> Change order</span>
               <% } %>
+              <% if (!c.flags.length && !c.changeOrder) { %><span class="cell-empty">—</span><% } %>
             </span>
-            <time class="acc-date" datetime="<%= c.created_at %>"><%= c.created_at %></time>
+            <time class="acc-date" datetime="<%= c.created_at %>" title="<%= c.created_at %> UTC"><%= fmtDate(c.created_at) %></time>
           </summary>
           <div class="acc-body">
             <div class="acc-section">
@@ -171,7 +191,8 @@
           </div>
         </details>
       <% }) %>
-      <p class="muted empty-state" id="no-results" style="display:none">No clients match your search.</p>
+        <p class="muted empty-state" id="no-results" style="display:none">No clients match your search.</p>
+      </div>
 
       <script>
         const searchBox = document.getElementById('call-search');

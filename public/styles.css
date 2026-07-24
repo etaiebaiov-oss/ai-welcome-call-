@@ -416,3 +416,110 @@ body.public { background: linear-gradient(180deg, #f4f8fc 0%, var(--bg) 100%); }
   .page-head .page-actions { width: 100%; }
   .page-head .page-actions .btn { flex: 1; }
 }
+
+/* ==========================================================================
+   Refinement pass — cohesive data list, status hierarchy, KPI & toolbar polish
+   ========================================================================== */
+
+/* Ambient top-of-page treatment: cool blue into warm white, content stays flat */
+body {
+  background:
+    radial-gradient(1100px 320px at 18% -60px, rgba(37, 99, 235, 0.08), transparent 60%),
+    radial-gradient(900px 280px at 85% -100px, rgba(245, 158, 11, 0.07), transparent 62%),
+    var(--bg);
+}
+
+/* Header: tighter grouping, clearer active tab, quieter logout */
+.topbar-inner { gap: 14px; }
+.nav-links { margin-left: 4px; }
+.nav-links a.active {
+  background: var(--primary-soft); color: var(--primary-strong);
+  box-shadow: inset 0 -2px 0 var(--primary);
+}
+.nav-right .btn { color: var(--faint); }
+.nav-right .btn:hover { color: var(--text); background: var(--surface-tint); }
+
+/* KPI cards: tinted icon container, dominant number, subtle status wash */
+.stat { flex-direction: row; align-items: center; gap: 13px; padding: 14px 16px; }
+.stat::before { display: none; }
+.stat > div { display: flex; flex-direction: column; gap: 0; }
+.stat-icon {
+  width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #eef2f7; color: var(--muted);
+}
+.stat-info .stat-icon { background: var(--primary-soft); color: var(--primary-strong); }
+.stat-success .stat-icon { background: var(--success-soft); color: var(--success); }
+.stat-warn .stat-icon { background: var(--accent-soft); color: var(--warn); }
+.stat-info { background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), #fff 55%); }
+.stat-success { background: linear-gradient(135deg, rgba(22, 128, 60, 0.05), #fff 55%); }
+.stat-warn { background: linear-gradient(135deg, rgba(245, 158, 11, 0.07), #fff 55%); }
+.stat-label { font-size: 0.75rem; }
+.stat-num { font-size: 2.05rem; line-height: 1.12; }
+
+/* Toolbar: compact, filters clearly interactive, active state confident */
+.filter-row { padding: 8px 10px; gap: 8px; }
+.filter-row .search-field input { min-height: 37px; }
+.filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+.filter-btn:hover { border-color: var(--border-strong); background: var(--surface-tint); color: var(--text); }
+.filter-btn .muted { color: inherit; opacity: 0.6; font-weight: 500; }
+.filter-btn.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+.filter-btn.active .muted { opacity: 0.75; }
+
+/* Cohesive call list: one elevated container, column headers, hairline rows */
+.list-card { --cols: 26px minmax(190px, 1.6fr) 54px 148px minmax(150px, 1fr) 176px; padding: 0; overflow: hidden; }
+.list-head {
+  display: grid; grid-template-columns: var(--cols); gap: 12px; align-items: center;
+  padding: 9px 18px; border-bottom: 1px solid var(--border); background: var(--surface-tint);
+  font-size: 0.69rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--faint);
+}
+.list-head .th-right { text-align: right; }
+.list-card .call-acc {
+  border: none; border-left: 2px solid transparent; border-radius: 0; margin: 0;
+  box-shadow: none; background: transparent; border-bottom: 1px solid var(--border);
+}
+.list-card .call-acc:last-of-type { border-bottom: none; }
+.list-card .call-acc.row-completed { border-left-color: var(--success); }
+.list-card .call-acc.row-flagged { border-left-color: var(--accent); }
+.list-card .call-acc.row-pending { border-left-color: transparent; }
+.list-card .call-acc summary {
+  grid-template-columns: var(--cols); padding: 8px 18px; min-height: 46px;
+  transition: background var(--trans);
+}
+.list-card .call-acc summary:hover { background: #f6f9fd; }
+.list-card .call-acc summary:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.list-card .call-acc[open] { background: #f5f9ff; border-left-color: var(--primary); }
+.list-card .call-acc[open] summary { background: transparent; }
+.list-card .acc-body { background: transparent; border-top: 1px dashed var(--border-strong); animation: acc-in 190ms ease; }
+@keyframes acc-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+
+/* Status hierarchy: issues loudest, review status secondary, change order restrained */
+.cell-source { font-size: 0.73rem; font-weight: 700; color: var(--faint); letter-spacing: 0.05em; }
+.cell-status .badge { font-size: 0.74rem; }
+.cell-issues { display: flex; flex-wrap: wrap; gap: 5px 10px; align-items: center; }
+.chip-issues {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--danger); color: #fff; font-size: 0.75rem; font-weight: 700;
+  border-radius: 7px; padding: 3px 9px;
+}
+.mini-flag { display: inline-flex; align-items: center; gap: 5px; color: var(--warn); font-size: 0.77rem; font-weight: 650; }
+.cell-empty { color: var(--border-strong); }
+.list-card .acc-date { color: var(--muted); font-family: var(--font-sans); font-size: 0.8rem; }
+
+@media (max-width: 900px) {
+  .list-head { display: none; }
+  .list-card { --cols: none; }
+  .list-card .call-acc summary { grid-template-columns: 22px 1fr auto; row-gap: 6px; }
+  .list-card .cell-source, .list-card .acc-date { display: none; }
+  .list-card .cell-issues, .list-card .cell-status { grid-column: 2 / -1; }
+}
+
+/* Skeleton loading (matches final row anatomy) */
+.skeleton-row { display: grid; grid-template-columns: var(--cols, 1fr); gap: 12px; padding: 13px 18px; border-bottom: 1px solid var(--border); }
+.skeleton { position: relative; overflow: hidden; background: #e8edf4; border-radius: 6px; min-height: 12px; }
+.skeleton::after {
+  content: ''; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { 100% { transform: translateX(100%); } }
