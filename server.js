@@ -446,7 +446,9 @@ app.post('/admin/analyze', auth.requireAdmin, uploadAudio.single('audio'), async
   if (!req.file) return fail('Choose an audio file (.mp3, .m4a, .wav — up to 25MB).');
 
   try {
+    console.log(`[analyze] received ${req.file.originalname} (${Math.round(req.file.size / 1024)} KB), transcribing...`);
     const transcript = await transcribeAudio(req.file.buffer, req.file.originalname, apiKey);
+    console.log(`[analyze] transcript ${transcript.length} chars, resolving client (${req.body.call_id})...`);
 
     let call;
     let matchNotice = '';
@@ -498,12 +500,14 @@ app.post('/admin/analyze', auth.requireAdmin, uploadAudio.single('audio'), async
     }
     if (!call) return fail('Pick which client this recording belongs to.');
 
+    console.log(`[analyze] auditing against ${call.script_variant || 'sw'} script for call ${call.id}...`);
     const analysis = await analyzeTranscript({
       transcript,
       call,
       script: vapi.getScript(call.script_variant),
       apiKey,
     });
+    console.log(`[analyze] audit complete for call ${call.id}`);
     const { flagged, flags } = computeFlags(analysis);
 
     const ext = (path.extname(req.file.originalname || '') || '.mp3').toLowerCase();

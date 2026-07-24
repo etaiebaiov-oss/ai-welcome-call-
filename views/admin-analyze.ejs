@@ -30,7 +30,7 @@
         </div>
       <% } %>
       <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
-      <form method="post" action="/admin/analyze" enctype="multipart/form-data" class="stack">
+      <form method="post" action="/admin/analyze" enctype="multipart/form-data" class="stack" id="analyze-form">
         <label>Which client is this recording for?
           <select name="call_id" id="client-select" required>
             <option value="auto" selected>Auto-detect from the recording (recommended)</option>
@@ -70,7 +70,11 @@
         <label>Recording file
           <input type="file" name="audio" accept=".mp3,.m4a,.wav,.aac,.ogg,audio/*" required>
         </label>
-        <button class="btn btn-primary" type="submit" <%= hasKey ? '' : 'disabled' %>><%- include('partials/icon', { name: 'search', size: 15 }) %> Transcribe &amp; audit recording</button>
+        <button class="btn btn-primary" type="submit" id="analyze-btn" <%= hasKey ? '' : 'disabled' %>><%- include('partials/icon', { name: 'search', size: 15 }) %> Transcribe &amp; audit recording</button>
+        <div class="alert alert-success hidden" id="analyze-progress" role="status">
+          <%- include('partials/icon', { name: 'audio', size: 16 }) %>
+          <div><strong>Working on it…</strong> Uploading, transcribing, and auditing the recording. This takes 30–90 seconds — please keep this page open. You'll be taken to the client's record when it finishes.</div>
+        </div>
         <p class="fineprint">
           Auto-detect listens for the name, address, and phone number the homeowner states during the call,
           matches them against your client list, and attaches the audit to that record — or creates a new
@@ -80,5 +84,15 @@
       </form>
     </div>
   </main>
+<script>
+    document.getElementById('analyze-form').addEventListener('submit', () => {
+      setTimeout(() => {
+        const btn = document.getElementById('analyze-btn');
+        btn.disabled = true;
+        btn.textContent = 'Working — transcribing & auditing…';
+        document.getElementById('analyze-progress').classList.remove('hidden');
+      }, 0);
+    });
+  </script>
 </body>
 </html>
