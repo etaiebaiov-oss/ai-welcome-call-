@@ -2,40 +2,222 @@
 <html lang="en">
 <head>
   <%- include('partials/head') %>
-  <title>Dashboard · <%= companyName %> Admin</title>
+  <title>Welcome Calls · Welcome Call Center</title>
 </head>
 <body>
   <%- include('partials/adminnav') %>
 
   <main class="wide">
-    <% if (notice) { %><div class="alert alert-error"><%= notice %></div><% } %>
+    <div class="page-head">
+      <div>
+        <h1>Welcome Calls</h1>
+        <p>Create, monitor, and review homeowner welcome calls. Flagged calls need a human follow-up.</p>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-primary" type="button" onclick="document.getElementById('create-modal').showModal()">
+          <%- include('partials/icon', { name: 'plus', size: 16 }) %> New welcome call
+        </button>
+      </div>
+    </div>
+
+    <% if (notice) { %>
+      <div class="alert alert-error"><%- include('partials/icon', { name: 'alert', size: 16 }) %><div><%= notice %></div></div>
+    <% } %>
     <% if (created) { %>
       <div class="alert alert-success">
-        Welcome call created for <strong><%= created.homeowner_name %></strong>. Share this link with them:
-        <div class="share-row">
-          <input class="share-input" readonly value="<%= appUrl %>/call/<%= created.token %>" onclick="this.select()">
-          <button class="btn btn-sm" onclick="navigator.clipboard.writeText('<%= appUrl %>/call/<%= created.token %>');this.textContent='Copied!'">Copy</button>
+        <%- include('partials/icon', { name: 'check-circle', size: 16 }) %>
+        <div style="flex:1">
+          Welcome call created for <strong><%= created.homeowner_name %></strong>. Share this link:
+          <div class="share-row">
+            <input class="share-input" readonly value="<%= appUrl %>/call/<%= created.token %>" onclick="this.select()">
+            <button class="btn btn-sm" onclick="navigator.clipboard.writeText('<%= appUrl %>/call/<%= created.token %>');this.textContent='Copied!'"><%- include('partials/icon', { name: 'copy', size: 14 }) %> Copy</button>
+          </div>
         </div>
       </div>
     <% } %>
 
     <div class="stats-row">
-      <div class="stat"><div class="stat-num"><%= stats.total %></div><div class="stat-label">Total calls</div></div>
-      <div class="stat"><div class="stat-num ok"><%= stats.completed %></div><div class="stat-label">Completed clean</div></div>
-      <div class="stat"><div class="stat-num warn"><%= stats.flagged %></div><div class="stat-label">Flagged for review</div></div>
-      <div class="stat"><div class="stat-num"><%= stats.pending %></div><div class="stat-label">Pending / in progress</div></div>
+      <div class="stat stat-info">
+        <span class="stat-label"><%- include('partials/icon', { name: 'phone', size: 14 }) %> Total calls</span>
+        <span class="stat-num"><%= stats.total %></span>
+      </div>
+      <div class="stat stat-success">
+        <span class="stat-label"><%- include('partials/icon', { name: 'check-circle', size: 14 }) %> Completed clean</span>
+        <span class="stat-num ok"><%= stats.completed %></span>
+      </div>
+      <div class="stat stat-warn">
+        <span class="stat-label"><%- include('partials/icon', { name: 'alert', size: 14 }) %> Flagged for review</span>
+        <span class="stat-num warn"><%= stats.flagged %></span>
+      </div>
+      <div class="stat">
+        <span class="stat-label"><%- include('partials/icon', { name: 'clock', size: 14 }) %> Pending / in progress</span>
+        <span class="stat-num"><%= stats.pending %></span>
+      </div>
     </div>
 
-    <div class="card">
-      <details <%= stats.total === 0 ? 'open' : '' %>>
-        <summary class="h2-summary">➕ Create a new welcome call link</summary>
-        <p class="muted">Fill in the homeowner's info from your records, then share the generated link — or let them fill in their own details on the public landing page at <a href="<%= appUrl %>" target="_blank"><%= appUrl %></a>.</p>
+    <% if (calls.length === 0) { %>
+      <div class="card empty-state">
+        <%- include('partials/icon', { name: 'phone', size: 34 }) %>
+        <h2>No welcome calls yet</h2>
+        <p>Create your first call with the button above, or import your deal board to generate links in bulk.</p>
+        <a class="btn" href="/admin/import"><%- include('partials/icon', { name: 'upload', size: 15 }) %> Import deal board</a>
+      </div>
+    <% } else { %>
+      <div class="filter-row" role="toolbar" aria-label="Search and filter calls">
+        <div class="search-field">
+          <%- include('partials/icon', { name: 'search', size: 15 }) %>
+          <input id="call-search" type="search" placeholder="Search name, phone, address, installer…" autocomplete="off" aria-label="Search calls">
+        </div>
+        <div class="filter-tabs">
+          <button class="btn btn-sm filter-btn active" data-filter="all">All <span class="muted">(<%= calls.length %>)</span></button>
+          <button class="btn btn-sm filter-btn" data-filter="pending">Pending <span class="muted">(<%= calls.filter(c => ['pending','in_progress'].includes(c.status)).length %>)</span></button>
+          <button class="btn btn-sm filter-btn" data-filter="completed">Completed <span class="muted">(<%= calls.filter(c => c.status === 'completed').length %>)</span></button>
+          <button class="btn btn-sm filter-btn" data-filter="flagged">Flagged <span class="muted">(<%= calls.filter(c => c.status === 'flagged').length %>)</span></button>
+          <button class="btn btn-sm filter-btn" data-filter="changeorder">Change orders <span class="muted">(<%= calls.filter(c => c.changeOrder).length %>)</span></button>
+          <button class="btn btn-sm filter-btn" data-filter="import">Imported <span class="muted">(<%= calls.filter(c => c.created_by === 'import').length %>)</span></button>
+        </div>
+      </div>
+
+      <% calls.forEach((c) => {
+        const rowClass = c.status === 'completed' ? 'row-completed' : c.status === 'flagged' ? 'row-flagged' : 'row-pending';
+      %>
+        <details class="call-acc <%= rowClass %>"
+          data-search="<%= [c.homeowner_name, c.phone, c.property_address, c.installer || '', c.email || ''].join(' ').toLowerCase() %>"
+          data-status="<%= c.status %>"
+          data-changeorder="<%= c.changeOrder ? '1' : '0' %>"
+          data-import="<%= c.created_by === 'import' ? '1' : '0' %>">
+          <summary>
+            <span class="acc-chevron"><%- include('partials/icon', { name: 'chevron', size: 16 }) %></span>
+            <span class="acc-name">
+              <strong><%= c.homeowner_name %></strong>
+              <span class="sub"><%= c.phone %></span>
+            </span>
+            <span class="badge-plain"><%= c.script_variant === 'pss' ? 'PSS' : 'SW' %></span>
+            <span class="acc-pills">
+              <% if (c.status === 'completed') { %>
+                <span class="badge badge-success"><%- include('partials/icon', { name: 'check', size: 12 }) %> Completed</span>
+              <% } else if (c.status === 'flagged') { %>
+                <span class="badge badge-warn"><%- include('partials/icon', { name: 'alert', size: 12 }) %> Flagged</span>
+              <% } else if (c.status === 'in_progress') { %>
+                <span class="badge badge-info"><%- include('partials/icon', { name: 'phone', size: 12 }) %> In progress</span>
+              <% } else { %>
+                <span class="badge badge-neutral"><%- include('partials/icon', { name: 'clock', size: 12 }) %> Pending</span>
+              <% } %>
+              <% if (c.flags.length) { %>
+                <span class="badge badge-danger"><%- include('partials/icon', { name: 'alert', size: 12 }) %> <%= c.flags.length %> issue<%= c.flags.length === 1 ? '' : 's' %></span>
+              <% } %>
+              <% if (c.changeOrder) { %>
+                <span class="badge badge-warn"><%- include('partials/icon', { name: 'edit', size: 12 }) %> Change order</span>
+              <% } %>
+            </span>
+            <time class="acc-date" datetime="<%= c.created_at %>"><%= c.created_at %></time>
+          </summary>
+          <div class="acc-body">
+            <div class="acc-section">
+              <h4>Homeowner</h4>
+              <div class="detail-grid" style="margin-top:4px">
+                <div><span class="muted">Property</span><br><%= c.property_address %></div>
+                <div><span class="muted">Email</span><br><%= c.email || '—' %></div>
+                <div><span class="muted">Installer</span><br><%= c.installer || '—' %></div>
+                <div><span class="muted">Monthly payment</span><br><%= c.monthly_payment || '—' %></div>
+                <div><span class="muted">Escalator</span><br><%= c.escalator || '—' %></div>
+                <div><span class="muted">Energy offset</span><br><%= c.offset_percent || '—' %></div>
+              </div>
+            </div>
+            <% if (c.deal) { %>
+              <div class="acc-section">
+                <h4>Deal details</h4>
+                <div class="detail-grid" style="margin-top:4px">
+                  <div><span class="muted">Stage</span><br><%= c.deal.stage || '—' %></div>
+                  <div><span class="muted">NTP status</span><br><%= c.deal.ntp_status || '—' %></div>
+                  <div><span class="muted">Finance</span><br><%= c.deal.finance_type || '—' %></div>
+                  <div><span class="muted">Panels</span><br><%= c.deal.panels || '—' %></div>
+                  <div><span class="muted">Current usage (kWh)</span><br><%= c.deal.current_usage_kwh || '—' %></div>
+                  <div><span class="muted">Sold production (kWh)</span><br><%= c.deal.sold_production_kwh || '—' %></div>
+                  <div><span class="muted">Site survey</span><br><%= c.deal.site_survey || '—' %></div>
+                  <% if (c.deal.rep) { %><div><span class="muted">Rep</span><br><%= c.deal.rep %></div><% } %>
+                </div>
+              </div>
+            <% } %>
+            <% if (c.changeOrder) { %>
+              <div class="alert alert-warn" style="margin-bottom:12px">
+                <%- include('partials/icon', { name: 'alert', size: 16 }) %>
+                <div><strong>Change order / resign:</strong> <%= c.deal.change_order %></div>
+              </div>
+            <% } %>
+            <% if (c.deal && c.deal.notes) { %><p class="muted" style="margin:0 0 12px">Notes: <%= c.deal.notes %></p><% } %>
+            <div class="acc-section" style="margin-bottom:0">
+              <h4>Actions</h4>
+              <div class="btn-row">
+                <a class="btn btn-sm btn-primary" href="/admin/calls/<%= c.id %>"><%- include('partials/icon', { name: 'file', size: 14 }) %> Full record</a>
+                <% if (c.recording_file) { %>
+                  <a class="btn btn-sm" href="/admin/calls/<%= c.id %>/recording?download=1"><%- include('partials/icon', { name: 'download', size: 14 }) %> Recording</a>
+                <% } %>
+                <% if (['pending', 'in_progress'].includes(c.status)) { %>
+                  <a class="btn btn-sm" href="/call/<%= c.token %>" target="_blank" rel="noopener"><%- include('partials/icon', { name: 'play', size: 14 }) %> Do call now</a>
+                  <a class="btn btn-sm" href="/admin/calls/<%= c.id %>/script"><%- include('partials/icon', { name: 'printer', size: 14 }) %> Manual script</a>
+                  <% if (phoneCallsEnabled) { %>
+                    <form method="post" action="/admin/calls/<%= c.id %>/dial" class="inline-form">
+                      <button class="btn btn-sm" type="submit" onclick="return confirm('The AI will call <%= c.phone %> right now. Continue?')"><%- include('partials/icon', { name: 'phone-outgoing', size: 14 }) %> AI calls their phone</button>
+                    </form>
+                  <% } %>
+                  <input class="share-input" readonly value="<%= appUrl %>/call/<%= c.token %>" onclick="this.select()" style="flex:1;min-width:220px" aria-label="Share link">
+                <% } %>
+                <form method="post" action="/admin/calls/<%= c.id %>/delete" class="inline-form" style="margin-left:auto">
+                  <button class="btn btn-sm btn-ghost danger" type="submit" onclick="return confirm('Permanently delete <%= c.homeowner_name %>\'s call record<%= c.recording_file ? ' AND its recording' : '' %>? This cannot be undone.')"><%- include('partials/icon', { name: 'trash', size: 14 }) %> Delete</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </details>
+      <% }) %>
+      <p class="muted empty-state" id="no-results" style="display:none">No clients match your search.</p>
+
+      <script>
+        const searchBox = document.getElementById('call-search');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        let activeFilter = 'all';
+        function applyFilters() {
+          const term = searchBox.value.trim().toLowerCase();
+          let visible = 0;
+          document.querySelectorAll('details.call-acc').forEach((d) => {
+            const matchesTerm = !term || d.dataset.search.includes(term);
+            const matchesFilter =
+              activeFilter === 'all' ? true :
+              activeFilter === 'pending' ? (d.dataset.status === 'pending' || d.dataset.status === 'in_progress') :
+              activeFilter === 'changeorder' ? d.dataset.changeorder === '1' :
+              activeFilter === 'import' ? d.dataset.import === '1' :
+              d.dataset.status === activeFilter;
+            const show = matchesTerm && matchesFilter;
+            d.style.display = show ? '' : 'none';
+            if (show) visible++;
+          });
+          document.getElementById('no-results').style.display = visible ? 'none' : '';
+        }
+        searchBox.addEventListener('input', applyFilters);
+        filterBtns.forEach((b) => b.addEventListener('click', () => {
+          activeFilter = b.dataset.filter;
+          filterBtns.forEach((x) => x.classList.toggle('active', x === b));
+          applyFilters();
+        }));
+      </script>
+    <% } %>
+
+    <dialog class="modal" id="create-modal" aria-labelledby="create-modal-title">
+      <div class="modal-head">
+        <h2 id="create-modal-title">New welcome call</h2>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="document.getElementById('create-modal').close()" aria-label="Close">
+          <%- include('partials/icon', { name: 'x', size: 16 }) %>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="muted" style="margin-top:0">Fill in the homeowner's info from your records, then share the generated link — or use the <a href="/admin/import">deal board import</a> for bulk creation.</p>
         <form method="post" action="/admin/calls/new" class="grid-form">
           <label>Full name <span class="req">*</span><input name="homeowner_name" required maxlength="200"></label>
-          <label>Phone <span class="req">*</span><input name="phone" required maxlength="40"></label>
+          <label>Phone <span class="req">*</span><input name="phone" required maxlength="40" type="tel"></label>
           <label>Email<input name="email" type="email" maxlength="200"></label>
           <label>Property address <span class="req">*</span><input name="property_address" required maxlength="400"></label>
-          <label>Installer / company name <span class="muted">(the AI speaks on behalf of this company)</span>
+          <label>Installer / company name
             <input name="installer" maxlength="200" placeholder="e.g. Sunrise Solar LLC">
           </label>
           <label>Script version
@@ -47,117 +229,13 @@
           <label>Monthly payment<input name="monthly_payment" maxlength="60" placeholder="e.g. $178.40"></label>
           <label>Annual rate escalator<input name="escalator" maxlength="60" placeholder="e.g. 2.99%"></label>
           <label>Expected energy offset<input name="offset_percent" maxlength="60" placeholder="e.g. 124%"></label>
-          <button class="btn btn-primary" type="submit">Create call link</button>
-        </form>
-      </details>
-    </div>
-
-    <div class="card">
-      <h2>Welcome calls <span class="muted" style="font-weight:normal;font-size:0.8em">— click a client to expand their details</span></h2>
-      <% if (calls.length === 0) { %>
-        <p class="muted">No calls yet. Create a link above, import your deal board, or share the landing page.</p>
-      <% } else { %>
-        <div class="filter-row">
-          <input id="call-search" type="search" placeholder="🔎 Search name, phone, address, installer…" autocomplete="off">
-          <div class="filter-tabs">
-            <button class="btn btn-sm filter-btn active" data-filter="all">All (<%= calls.length %>)</button>
-            <button class="btn btn-sm filter-btn" data-filter="pending">Pending (<%= calls.filter(c => ['pending','in_progress'].includes(c.status)).length %>)</button>
-            <button class="btn btn-sm filter-btn" data-filter="completed">Completed (<%= calls.filter(c => c.status === 'completed').length %>)</button>
-            <button class="btn btn-sm filter-btn" data-filter="flagged">Flagged (<%= calls.filter(c => c.status === 'flagged').length %>)</button>
-            <button class="btn btn-sm filter-btn" data-filter="changeorder">⚠️ Change orders (<%= calls.filter(c => c.changeOrder).length %>)</button>
-            <button class="btn btn-sm filter-btn" data-filter="import">Imported (<%= calls.filter(c => c.created_by === 'import').length %>)</button>
+          <div class="grid-span btn-row" style="justify-content:flex-end">
+            <button class="btn" type="button" onclick="document.getElementById('create-modal').close()">Cancel</button>
+            <button class="btn btn-primary" type="submit"><%- include('partials/icon', { name: 'plus', size: 15 }) %> Create call link</button>
           </div>
-        </div>
-        <% calls.forEach((c) => { %>
-          <details class="call-acc"
-            data-search="<%= [c.homeowner_name, c.phone, c.property_address, c.installer || '', c.email || ''].join(' ').toLowerCase() %>"
-            data-status="<%= c.status %>"
-            data-changeorder="<%= c.changeOrder ? '1' : '0' %>"
-            data-import="<%= c.created_by === 'import' ? '1' : '0' %>">
-            <summary>
-              <span class="acc-name"><strong><%= c.homeowner_name %></strong><span class="muted"> · <%= c.phone %></span></span>
-              <span class="acc-pills">
-                <span class="pill pill-soft"><%= c.script_variant === 'pss' ? 'PSS' : 'SW' %></span>
-                <% if (c.changeOrder) { %><span class="pill pill-flagged">⚠️ Change order</span><% } %>
-                <% if (c.flags.length) { %><span class="pill pill-flagged">⚠️ <%= c.flags.length %> issue<%= c.flags.length > 1 ? 's' : '' %></span><% } %>
-                <span class="pill pill-<%= c.status %>"><%= c.status.replace('_', ' ') %></span>
-              </span>
-              <span class="muted acc-date"><%= c.created_at %></span>
-            </summary>
-            <div class="acc-body">
-              <div class="detail-grid">
-                <div><span class="muted">Property</span><br><%= c.property_address %></div>
-                <div><span class="muted">Email</span><br><%= c.email || '—' %></div>
-                <div><span class="muted">Installer</span><br><%= c.installer || '—' %></div>
-                <div><span class="muted">Monthly payment</span><br><%= c.monthly_payment || '—' %></div>
-                <div><span class="muted">Escalator</span><br><%= c.escalator || '—' %></div>
-                <div><span class="muted">Energy offset</span><br><%= c.offset_percent || '—' %></div>
-                <% if (c.deal) { %>
-                  <div><span class="muted">Stage</span><br><%= c.deal.stage || '—' %></div>
-                  <div><span class="muted">NTP status</span><br><%= c.deal.ntp_status || '—' %></div>
-                  <div><span class="muted">Finance</span><br><%= c.deal.finance_type || '—' %></div>
-                  <div><span class="muted">Panels</span><br><%= c.deal.panels || '—' %></div>
-                  <div><span class="muted">Current usage (kWh)</span><br><%= c.deal.current_usage_kwh || '—' %></div>
-                  <div><span class="muted">Sold production (kWh)</span><br><%= c.deal.sold_production_kwh || '—' %></div>
-                  <div><span class="muted">Site survey</span><br><%= c.deal.site_survey || '—' %></div>
-                  <% if (c.deal.rep) { %><div><span class="muted">Rep</span><br><%= c.deal.rep %></div><% } %>
-                <% } %>
-              </div>
-              <% if (c.changeOrder) { %>
-                <div class="alert alert-error" style="margin-top:12px;margin-bottom:0">⚠️ <strong>Change order / resign:</strong> <%= c.deal.change_order %></div>
-              <% } %>
-              <% if (c.deal && c.deal.notes) { %><p class="muted" style="margin-top:10px;margin-bottom:0">Notes: <%= c.deal.notes %></p><% } %>
-              <div class="btn-row" style="margin-top:14px">
-                <a class="btn btn-sm" href="/admin/calls/<%= c.id %>">Full record →</a>
-                <% if (c.recording_file) { %><a class="btn btn-sm" href="/admin/calls/<%= c.id %>/recording?download=1">⬇ Recording</a><% } %>
-                <form method="post" action="/admin/calls/<%= c.id %>/delete" class="inline-form">
-                  <button class="btn btn-sm btn-ghost" type="submit" style="color:var(--danger)" onclick="return confirm('Permanently delete <%= c.homeowner_name %>\'s call record<%= c.recording_file ? ' AND its recording' : '' %>? This cannot be undone.')">🗑 Delete</button>
-                </form>
-                <% if (['pending', 'in_progress'].includes(c.status)) { %>
-                  <a class="btn btn-sm" href="/call/<%= c.token %>" target="_blank" rel="noopener">▶ Do call now (on this device)</a>
-                  <a class="btn btn-sm" href="/admin/calls/<%= c.id %>/script">📄 Manual script</a>
-                  <% if (phoneCallsEnabled) { %>
-                    <form method="post" action="/admin/calls/<%= c.id %>/dial" class="inline-form">
-                      <button class="btn btn-sm btn-primary" type="submit" onclick="return confirm('The AI will call <%= c.phone %> right now. Continue?')">📞 AI calls their phone</button>
-                    </form>
-                  <% } %>
-                  <input class="share-input" readonly value="<%= appUrl %>/call/<%= c.token %>" onclick="this.select()" style="flex:1;min-width:220px">
-                <% } %>
-              </div>
-            </div>
-          </details>
-        <% }) %>
-        <p class="muted" id="no-results" style="display:none">No clients match your search.</p>
-        <script>
-          const searchBox = document.getElementById('call-search');
-          const filterBtns = document.querySelectorAll('.filter-btn');
-          let activeFilter = 'all';
-          function applyFilters() {
-            const term = searchBox.value.trim().toLowerCase();
-            let visible = 0;
-            document.querySelectorAll('details.call-acc').forEach((d) => {
-              const matchesTerm = !term || d.dataset.search.includes(term);
-              const matchesFilter =
-                activeFilter === 'all' ? true :
-                activeFilter === 'pending' ? (d.dataset.status === 'pending' || d.dataset.status === 'in_progress') :
-                activeFilter === 'changeorder' ? d.dataset.changeorder === '1' :
-                activeFilter === 'import' ? d.dataset.import === '1' :
-                d.dataset.status === activeFilter;
-              const show = matchesTerm && matchesFilter;
-              d.style.display = show ? '' : 'none';
-              if (show) visible++;
-            });
-            document.getElementById('no-results').style.display = visible ? 'none' : '';
-          }
-          searchBox.addEventListener('input', applyFilters);
-          filterBtns.forEach((b) => b.addEventListener('click', () => {
-            activeFilter = b.dataset.filter;
-            filterBtns.forEach((x) => x.classList.toggle('active', x === b));
-            applyFilters();
-          }));
-        </script>
-      <% } %>
-    </div>
+        </form>
+      </div>
+    </dialog>
   </main>
 </body>
 </html>

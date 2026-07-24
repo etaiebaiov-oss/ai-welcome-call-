@@ -5,10 +5,10 @@
   <title>Welcome Call Center</title>
 </head>
 <body class="public">
-  <nav class="topbar">
+  <nav class="topbar public-bar" aria-label="Main">
     <div class="topbar-inner">
-      <a class="brand" href="/"><span class="brand-mark">☀️</span>Welcome Call Center</a>
-      <div class="topbar-links"><span class="pill pill-soft">🔒 Secure &amp; recorded</span></div>
+      <a class="brand" href="/"><%- include('partials/logo', { size: 30 }) %> Welcome Call Center</a>
+      <span class="badge badge-neutral" style="margin-left:auto"><%- include('partials/icon', { name: 'shield-check', size: 12 }) %> Secure &amp; recorded</span>
     </div>
   </nav>
 
@@ -20,15 +20,24 @@
       3&ndash;5 minutes, and you can do it right here — no appointment needed.
     </p>
     <div class="hero-points">
-      <div class="point"><span class="point-icon">🕐</span><div><strong>Quick &amp; easy</strong><br>Simple yes / "I understand" answers</div></div>
-      <div class="point"><span class="point-icon">🎙️</span><div><strong>Recorded for your protection</strong><br>Kept securely on file for compliance</div></div>
-      <div class="point"><span class="point-icon">🤝</span><div><strong>Friendly &amp; pressure-free</strong><br>Questions? We'll flag them for a real person to follow up</div></div>
+      <div class="point">
+        <span class="point-icon"><%- include('partials/icon', { name: 'clock' }) %></span>
+        <div><strong>Quick &amp; easy</strong><br>Simple yes / "I understand" answers</div>
+      </div>
+      <div class="point">
+        <span class="point-icon"><%- include('partials/icon', { name: 'mic' }) %></span>
+        <div><strong>Recorded for your protection</strong><br>Kept securely on file for compliance</div>
+      </div>
+      <div class="point">
+        <span class="point-icon"><%- include('partials/icon', { name: 'users' }) %></span>
+        <div><strong>Friendly &amp; pressure-free</strong><br>Questions? We'll flag them for a real person to follow up</div>
+      </div>
     </div>
   </header>
 
   <main class="narrow">
     <div class="card center-text">
-      <div class="big-emoji">✉️</div>
+      <div class="big-check"><%- include('partials/icon', { name: 'mail', size: 26 }) %></div>
       <h2>Your personal welcome call link</h2>
       <p class="lead">
         To make sure your call has your exact agreement details, welcome calls use a
@@ -40,12 +49,12 @@
         and we'll send it over — it takes seconds.
       </p>
     </div>
-    <p class="fineprint">
+    <p class="fineprint center-text">
       Welcome calls are recorded on an acknowledged, recorded line for quality and compliance purposes.
       You'll be asked to confirm this at the start of the call.
     </p>
   </main>
 
-  <footer class="footer">&copy; <%= new Date().getFullYear() %> Welcome Call Center · <a href="/admin" class="muted">Admin</a></footer>
+  <footer class="footer">&copy; <%= new Date().getFullYear() %> Welcome Call Center · <a href="/admin">Admin</a></footer>
 </body>
 </html>

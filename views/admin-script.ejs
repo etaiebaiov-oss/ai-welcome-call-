@@ -2,14 +2,19 @@
 <html lang="en">
 <head>
   <%- include('partials/head') %>
-  <title>Call Script · <%= companyName %> Admin</title>
+  <title>Call Scripts · Welcome Call Center</title>
 </head>
 <body>
   <%- include('partials/adminnav') %>
 
   <main class="wide">
+    <div class="page-head">
+      <div>
+        <h1>Call Scripts</h1>
+        <p>The scripts the AI follows on every welcome call — one per installer brand. Changes sync to the voice assistant when you save.</p>
+      </div>
+    </div>
     <div class="card">
-      <h1>Call script</h1>
       <div class="filter-tabs" style="margin:10px 0 14px">
         <a class="btn btn-sm filter-btn <%= variant === 'sw' ? 'active' : '' %>" href="/admin/script?variant=sw">Southwest Solar (SW)</a>
         <a class="btn btn-sm filter-btn <%= variant === 'pss' ? 'active' : '' %>" href="/admin/script?variant=pss">Pacific Sky (PSS)</a>

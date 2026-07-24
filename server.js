@@ -33,10 +33,15 @@ app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+// Lets the shared navigation mark the active page.
+app.use((req, res, next) => {
+  res.locals.currentPath = req.path;
+  next();
+});
 
 const BRAND = {
   companyName: vapi.COMPANY_NAME,
-  brandColor: (process.env.BRAND_COLOR || '#0284c7').trim(),
+  brandColor: (process.env.BRAND_COLOR || '#2563eb').trim(),
 };
 
 function appUrl(req) {

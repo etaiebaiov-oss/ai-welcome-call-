@@ -68,6 +68,10 @@ startBtn.addEventListener('click', async () => {
       statusText.textContent = 'Connected — say hello!';
       callActive = true;
       keepScreenAwake();
+      const stepConsent = document.getElementById('step-consent');
+      const stepCall = document.getElementById('step-call');
+      if (stepConsent) { stepConsent.classList.remove('current'); stepConsent.classList.add('done'); }
+      if (stepCall) stepCall.classList.add('current');
     });
 
     vapi.on('speech-start', () => { statusText.textContent = 'Assistant is speaking…'; });
@@ -84,6 +88,8 @@ startBtn.addEventListener('click', async () => {
       inCall.classList.add('hidden');
       postCall.classList.remove('hidden');
       if (consentRow) consentRow.classList.add('hidden');
+      const stepCall = document.getElementById('step-call');
+      if (stepCall) { stepCall.classList.remove('current'); stepCall.classList.add('done'); }
     });
 
     vapi.on('error', (err) => {

@@ -5,34 +5,39 @@
   <title>Your Welcome Call</title>
 </head>
 <body class="public">
-  <nav class="topbar">
+  <nav class="topbar public-bar" aria-label="Main">
     <div class="topbar-inner">
-      <a class="brand" href="/"><span class="brand-mark">☀️</span>Welcome Call Center</a>
-      <div class="topbar-links"><span class="pill pill-soft">🔒 Secure &amp; recorded</span></div>
+      <a class="brand" href="/"><%- include('partials/logo', { size: 30 }) %> Welcome Call Center</a>
+      <span class="badge badge-neutral" style="margin-left:auto"><%- include('partials/icon', { name: 'shield-check', size: 12 }) %> Secure &amp; recorded</span>
     </div>
   </nav>
 
   <main class="narrow center-page">
     <% if (done) { %>
       <div class="card center-text">
-        <div class="big-emoji">✅</div>
+        <div class="big-check"><%- include('partials/icon', { name: 'check', size: 28 }) %></div>
         <h1>Welcome call completed</h1>
         <p class="lead">Thank you, <%= call.homeowner_name %>! Your welcome call is done and on file. There's nothing else you need to do.</p>
       </div>
     <% } else { %>
       <div class="card" id="call-card">
-        <h1>Hi <%= call.homeowner_name.split(' ')[0] %> 👋</h1>
+        <ol class="steps" aria-label="Progress">
+          <li class="done">Your info</li>
+          <li class="current" id="step-consent">Consent</li>
+          <li id="step-call">The call</li>
+        </ol>
+        <h1>Hi <%= call.homeowner_name.split(' ')[0] %>!</h1>
         <p class="lead">You're all set to complete your welcome call. Find a quiet spot, and when you're ready, press the button below — our friendly assistant will walk you through everything. Most calls take 3&ndash;5 minutes.</p>
 
         <div class="info-box">
-          <div><span class="muted">Name:</span> <%= call.homeowner_name %></div>
-          <div><span class="muted">Property:</span> <%= call.property_address %></div>
-          <div><span class="muted">Phone on file:</span> <%= call.phone %></div>
-          <% if (call.email) { %><div><span class="muted">Email on file:</span> <%= call.email %></div><% } %>
-          <% if (call.installer) { %><div><span class="muted">Installer:</span> <%= call.installer %></div><% } %>
-          <% if (call.monthly_payment) { %><div><span class="muted">Monthly payment:</span> <%= call.monthly_payment %></div><% } %>
-          <% if (call.escalator) { %><div><span class="muted">Yearly escalator:</span> <%= call.escalator %> · 25 years</div><% } %>
-          <% if (call.offset_percent) { %><div><span class="muted">Expected energy offset:</span> <%= call.offset_percent %></div><% } %>
+          <div><span class="muted">Name</span> <%= call.homeowner_name %></div>
+          <div><span class="muted">Property</span> <%= call.property_address %></div>
+          <div><span class="muted">Phone on file</span> <%= call.phone %></div>
+          <% if (call.email) { %><div><span class="muted">Email on file</span> <%= call.email %></div><% } %>
+          <% if (call.installer) { %><div><span class="muted">Installer</span> <%= call.installer %></div><% } %>
+          <% if (call.monthly_payment) { %><div><span class="muted">Monthly payment</span> <%= call.monthly_payment %></div><% } %>
+          <% if (call.escalator) { %><div><span class="muted">Yearly escalator</span> <%= call.escalator %> · 25 years</div><% } %>
+          <% if (call.offset_percent) { %><div><span class="muted">Expected energy offset</span> <%= call.offset_percent %></div><% } %>
         </div>
 
         <label class="consent">
@@ -41,27 +46,29 @@
         </label>
 
         <div id="pre-call">
-          <button class="btn btn-primary btn-lg" id="start-btn" disabled>🎙️ Start my welcome call</button>
-          <p class="fineprint">Your browser will ask for microphone access — please tap "Allow".</p>
+          <button class="btn btn-primary btn-lg" id="start-btn" disabled>
+            <%- include('partials/icon', { name: 'mic', size: 18 }) %> Start my welcome call
+          </button>
+          <p class="fineprint center-text">Your browser will ask for microphone access — please tap "Allow".</p>
         </div>
 
         <div id="in-call" class="hidden">
           <div class="call-status">
-            <span class="live-dot"></span>
-            <span id="status-text">Connecting…</span>
+            <span class="live-dot" aria-hidden="true"></span>
+            <span id="status-text" role="status">Connecting…</span>
           </div>
-          <p class="fineprint">Please keep this page open and your screen on until the call finishes.</p>
-          <div class="volume-bar"><div id="volume-fill"></div></div>
+          <p class="fineprint" style="margin-top:0">Please keep this page open and your screen on until the call finishes.</p>
+          <div class="volume-bar" aria-hidden="true"><div id="volume-fill"></div></div>
           <button class="btn btn-danger" id="end-btn">End call</button>
         </div>
 
         <div id="post-call" class="hidden center-text">
-          <div class="big-emoji">✅</div>
+          <div class="big-check"><%- include('partials/icon', { name: 'check', size: 28 }) %></div>
           <h2>All done — thank you!</h2>
           <p class="lead">Your welcome call has been completed and securely stored. You can close this page.</p>
         </div>
 
-        <div id="call-error" class="alert alert-error hidden"></div>
+        <div id="call-error" class="alert alert-error hidden" role="alert"></div>
       </div>
     <% } %>
   </main>

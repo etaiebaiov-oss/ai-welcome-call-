@@ -20,7 +20,7 @@
   <main class="wide">
     <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px">
       <a class="muted" href="/admin/calls/<%= call.id %>">← Back to <%= call.homeowner_name %>'s record</a>
-      <button class="btn btn-primary" onclick="window.print()">🖨 Print / save as PDF</button>
+      <button class="btn btn-primary" onclick="window.print()"><%- include('partials/icon', { name: 'printer', size: 15 }) %> Print / save as PDF</button>
     </div>
 
     <div class="card">

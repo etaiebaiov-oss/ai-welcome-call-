@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <%- include('partials/head') %>
-  <title><%= call.homeowner_name %> · <%= companyName %> Admin</title>
+  <title><%= call.homeowner_name %> · Welcome Call Center</title>
 </head>
 <body>
   <%- include('partials/adminnav') %>
@@ -11,7 +11,7 @@
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
       <a class="muted" href="/admin">← Back to dashboard</a>
       <form method="post" action="/admin/calls/<%= call.id %>/delete" class="inline-form">
-        <button class="btn btn-sm btn-ghost" type="submit" style="color:var(--danger)" onclick="return confirm('Permanently delete this call record<%= call.recording_file ? ' AND its recording' : '' %>? This cannot be undone.')">🗑 Delete record</button>
+        <button class="btn btn-sm btn-ghost danger" type="submit" onclick="return confirm('Permanently delete this call record<%= call.recording_file ? ' AND its recording' : '' %>? This cannot be undone.')"><%- include('partials/icon', { name: 'trash', size: 14 }) %> Delete record</button>
       </form>
     </div>
     <% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
@@ -44,7 +44,7 @@
       <% if (deal) { %>
         <h3>Deal details (from import)</h3>
         <% if (changeOrder) { %>
-          <div class="alert alert-error">⚠️ <strong>Change order / resign:</strong> <%= deal.change_order %></div>
+          <div class="alert alert-warn"><%- include('partials/icon', { name: 'alert', size: 16 }) %><div><strong>Change order / resign:</strong> <%= deal.change_order %></div></div>
         <% } %>
         <div class="detail-grid">
           <div><span class="muted">Stage</span><br><%= deal.stage || '—' %></div>
@@ -62,7 +62,7 @@
 
       <% if (['pending', 'in_progress'].includes(call.status)) { %>
         <h3>Do the call</h3>
-        <p><a class="btn" href="/admin/calls/<%= call.id %>/script">📄 Manual call script (for a human caller)</a></p>
+        <p><a class="btn" href="/admin/calls/<%= call.id %>/script"><%- include('partials/icon', { name: 'printer', size: 15 }) %> Manual call script (for a human caller)</a></p>
         <h3>Share link</h3>
         <div class="share-row">
           <input class="share-input" readonly value="<%= appUrl %>/call/<%= call.token %>" onclick="this.select()">
@@ -72,7 +72,7 @@
           <form method="post" action="/admin/calls/<%= call.id %>/dial" style="margin-top:12px">
             <div class="btn-row" style="align-items:stretch">
               <input name="override_number" placeholder="Different number (optional — e.g. your own, to preview)" style="flex:1;min-width:240px">
-              <button class="btn btn-primary" type="submit" onclick="return confirm('The AI will place this call now. Continue?')">📞 Have the AI call</button>
+              <button class="btn btn-primary" type="submit" onclick="return confirm('The AI will place this call now. Continue?')"><%- include('partials/icon', { name: 'phone-outgoing', size: 15 }) %> Have the AI call</button>
             </div>
             <p class="fineprint">Leave the box empty to call the number on file (<%= call.phone %>). Enter a different number to call that instead — the AI still uses this homeowner's script and details.</p>
           </form>
@@ -82,19 +82,19 @@
 
     <% if (flags.length) { %>
       <div class="card flag-card">
-        <h2>⚠️ Flagged for review</h2>
+        <h2 style="display:flex;align-items:center;gap:8px"><%- include('partials/icon', { name: 'alert', size: 18 }) %> Flagged for review</h2>
         <ul class="flag-list">
-          <% flags.forEach((f) => { %><li><%= f %></li><% }) %>
+          <% flags.forEach((f) => { %><li><%- include('partials/icon', { name: 'alert', size: 14 }) %><span><%= f %></span></li><% }) %>
         </ul>
       </div>
     <% } %>
 
     <% if (call.recording_file || call.recording_url) { %>
       <div class="card">
-        <h2>🎙️ Recording <span class="muted" style="font-weight:normal;font-size:0.8em">(admin-only)</span></h2>
+        <h2 style="display:flex;align-items:center;gap:8px"><%- include('partials/icon', { name: 'audio', size: 18 }) %> Recording <span class="muted" style="font-weight:normal;font-size:0.8em">(admin-only)</span></h2>
         <% if (call.recording_file) { %>
           <audio controls preload="none" src="/admin/calls/<%= call.id %>/recording" style="width:100%"></audio>
-          <p><a class="btn" href="/admin/calls/<%= call.id %>/recording?download=1">⬇ Download recording</a></p>
+          <p><a class="btn" href="/admin/calls/<%= call.id %>/recording?download=1"><%- include('partials/icon', { name: 'download', size: 15 }) %> Download recording</a></p>
         <% } else { %>
           <p class="muted">Recording wasn't stored locally, but is available from Vapi: <a href="<%= call.recording_url %>" target="_blank" rel="noopener">open recording</a></p>
         <% } %>
@@ -112,12 +112,20 @@
       <div class="card">
         <h2>Verification checklist</h2>
         <div class="check-grid">
-          <div><%= analysis.consented_to_recording ? '✅' : '❌' %> Recording consent</div>
-          <div><%= analysis.confirmed_identity ? '✅' : '❌' %> Identity confirmed</div>
-          <div><%= analysis.confirmed_address ? '✅' : '❌' %> Address confirmed</div>
-          <div><%= analysis.confirmed_terms ? '✅' : '❌' %> Terms confirmed</div>
-          <div><%= analysis.call_completed ? '✅' : '❌' %> Call completed</div>
-          <div><%= analysis.understood_everything ? '✅' : '⚠️' %> Understood everything</div>
+          <% const CHECKS = [
+            ['Recording consent', analysis.consented_to_recording],
+            ['Identity confirmed', analysis.confirmed_identity],
+            ['Address confirmed', analysis.confirmed_address],
+            ['Terms confirmed', analysis.confirmed_terms],
+            ['Call completed', analysis.call_completed],
+            ['Understood everything', analysis.understood_everything],
+          ]; %>
+          <% CHECKS.forEach(([label, ok]) => { %>
+            <div>
+              <span style="color:var(--<%= ok ? 'success' : 'danger' %>);display:inline-flex"><%- include('partials/icon', { name: ok ? 'check-circle' : 'alert', size: 16 }) %></span>
+              <span><%= label %></span>
+            </div>
+          <% }) %>
         </div>
       </div>
     <% } %>

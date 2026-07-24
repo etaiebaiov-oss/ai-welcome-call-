@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
   <%- include('partials/head') %>
-  <title><%= title %> · <%= companyName %></title>
+  <title><%= title %> · Welcome Call Center</title>
 </head>
 <body class="public">
   <main class="narrow center-page">
-    <div class="card">
+    <div class="card center-text">
+      <div class="big-check" style="background:var(--warn-soft);border-color:var(--warn-border);color:var(--warn)"><%- include('partials/icon', { name: 'alert', size: 26 }) %></div>
       <h1><%= title %></h1>
       <p class="lead"><%= body %></p>
       <a class="btn btn-primary" href="/">Go back</a>

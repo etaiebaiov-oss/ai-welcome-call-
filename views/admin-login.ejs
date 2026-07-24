@@ -2,17 +2,25 @@
 <html lang="en">
 <head>
   <%- include('partials/head') %>
-  <title>Admin Login · Welcome Call Center</title>
+  <title>Sign in · Welcome Call Center</title>
 </head>
 <body>
-  <main class="narrow center-page">
+  <main class="narrow center-page" style="max-width:420px">
     <div class="card">
-      <h1><span class="brand-mark">☀️</span> Welcome Call Admin</h1>
-      <p class="muted">Sign in to review welcome calls, recordings, and flags.</p>
-      <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <%- include('partials/logo', { size: 40 }) %>
+        <div>
+          <h1 style="font-size:1.25rem;margin:0">Welcome Call Center</h1>
+          <span class="role-badge">Admin</span>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:0">Sign in to review welcome calls, recordings, and flags.</p>
+      <% if (error) { %>
+        <div class="alert alert-error"><%- include('partials/icon', { name: 'alert', size: 16 }) %><div><%= error %></div></div>
+      <% } %>
       <form method="post" action="/admin/login" class="stack">
         <label>Password
-          <input type="password" name="password" required autofocus>
+          <input type="password" name="password" required autofocus autocomplete="current-password">
         </label>
         <button class="btn btn-primary" type="submit">Sign in</button>
       </form>

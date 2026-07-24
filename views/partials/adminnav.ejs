@@ -1,14 +1,34 @@
-<nav class="topbar">
+<%
+const NAV = [
+  { href: '/admin', label: 'Dashboard', match: (p) => p === '/admin' || p.startsWith('/admin/calls') },
+  { href: '/admin/import', label: 'Import', match: (p) => p.startsWith('/admin/import') },
+  { href: '/admin/analyze', label: 'Analyze', match: (p) => p.startsWith('/admin/analyze') },
+  { href: '/admin/script', label: 'Call Scripts', match: (p) => p.startsWith('/admin/script') },
+  { href: '/admin/faq', label: 'Approved Answers', match: (p) => p.startsWith('/admin/faq') },
+  { href: '/admin/diagnostics', label: 'Diagnostics', match: (p) => p.startsWith('/admin/diagnostics') },
+];
+const path = typeof currentPath !== 'undefined' ? currentPath : '';
+%>
+<nav class="topbar" aria-label="Admin navigation">
   <div class="topbar-inner">
-    <a class="brand" href="/admin"><span class="brand-mark">☀️</span>Welcome Call Center <span class="muted">Admin</span></a>
-    <div class="topbar-links">
-      <a href="/admin">Dashboard</a>
-      <a href="/admin/import">Import</a>
-      <a href="/admin/analyze">Analyze Recording</a>
-      <a href="/admin/script">Call Script</a>
-      <a href="/admin/faq">Approved Answers</a>
-      <a href="/admin/diagnostics">Diagnostics</a>
-      <form method="post" action="/admin/logout" class="inline-form"><button class="btn btn-ghost btn-sm" type="submit">Log out</button></form>
+    <a class="brand" href="/admin">
+      <%- include('logo', { size: 30 }) %>
+      Welcome Call Center
+      <span class="role-badge">Admin</span>
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" onclick="const n=document.getElementById('admin-nav');const open=n.classList.toggle('open');this.setAttribute('aria-expanded',open)">
+      <%- include('icon', { name: 'menu', size: 18 }) %>
+      <span class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden">Menu</span>
+    </button>
+    <div class="nav-links" id="admin-nav">
+      <% NAV.forEach((item) => { %>
+        <a href="<%= item.href %>" <%= item.match(path) ? 'class="active" aria-current="page"' : '' %>><%= item.label %></a>
+      <% }) %>
+    </div>
+    <div class="nav-right">
+      <form method="post" action="/admin/logout" class="inline-form">
+        <button class="btn btn-ghost btn-sm" type="submit"><%- include('icon', { name: 'logout', size: 15 }) %> Log out</button>
+      </form>
     </div>
   </div>
 </nav>

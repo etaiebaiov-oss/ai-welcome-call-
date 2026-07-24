@@ -2,14 +2,20 @@
 <html lang="en">
 <head>
   <%- include('partials/head') %>
-  <title>Import Deals · Welcome Call Admin</title>
+  <title>Import · Welcome Call Center</title>
 </head>
 <body>
   <%- include('partials/adminnav') %>
 
   <main class="wide">
+    <div class="page-head">
+      <div>
+        <h1>Import</h1>
+        <p>Turn your deal board into welcome-call links in one upload. Re-uploading an updated board is safe — existing clients are skipped.</p>
+      </div>
+    </div>
     <div class="card">
-      <h1>Import deals from a spreadsheet</h1>
+      <h2>Upload your deal board</h2>
       <p class="muted">
         Upload your deal board (.xlsx or .csv). Each row with a homeowner name, address, and phone becomes a
         welcome-call link, with the installer, energy offset, and all deal details (stage, NTP status, panels,
@@ -21,7 +27,7 @@
         <label>Spreadsheet file
           <input type="file" name="file" accept=".xlsx,.xls,.csv" required>
         </label>
-        <button class="btn btn-primary" type="submit">Import &amp; create call links</button>
+        <button class="btn btn-primary" type="submit"><%- include('partials/icon', { name: 'upload', size: 15 }) %> Import &amp; create call links</button>
       </form>
     </div>
 
@@ -30,7 +36,7 @@
         <h2>Import complete</h2>
         <div class="stats-row">
           <div class="stat"><div class="stat-num ok"><%= result.created.length %></div><div class="stat-label">Call links created</div></div>
-          <div class="stat"><div class="stat-num warn"><%= result.changeOrders %></div><div class="stat-label">With change orders ⚠️</div></div>
+          <div class="stat stat-warn"><span class="stat-label"><%- include('partials/icon', { name: 'edit', size: 14 }) %> With change orders</span><span class="stat-num warn"><%= result.changeOrders %></span></div>
           <div class="stat"><div class="stat-num"><%= result.skippedExisting %></div><div class="stat-label">Skipped (already have a call)</div></div>
           <div class="stat"><div class="stat-num"><%= result.missingContact + result.badPhone %></div><div class="stat-label">Skipped (missing/bad contact info)</div></div>
         </div>
@@ -46,7 +52,7 @@
                   <tr>
                     <td><strong><%= c.name %></strong></td>
                     <td><%= c.phone %></td>
-                    <td><% if (c.changeOrder) { %><span class="pill pill-flagged">⚠️ Change order</span><% } %></td>
+                    <td><% if (c.changeOrder) { %><span class="badge badge-warn"><%- include('partials/icon', { name: 'edit', size: 12 }) %> Change order</span><% } %></td>
                     <td class="cell-wrap"><a href="<%= c.link %>" target="_blank"><%= c.link %></a></td>
                   </tr>
                 <% }) %>
@@ -72,7 +78,7 @@
                   <td><strong><%= c.homeowner_name %></strong></td>
                   <td><%= c.phone %></td>
                   <td><span class="pill pill-<%= c.status %>"><%= c.status.replace('_', ' ') %></span></td>
-                  <td><% if (c.changeOrder) { %><span class="pill pill-flagged">⚠️ Change order</span><% } %></td>
+                  <td><% if (c.changeOrder) { %><span class="badge badge-warn"><%- include('partials/icon', { name: 'edit', size: 12 }) %> Change order</span><% } %></td>
                   <td class="cell-wrap"><a href="<%= c.link %>" target="_blank"><%= c.link %></a></td>
                   <td><a class="btn btn-sm btn-ghost" href="/admin/calls/<%= c.id %>">View →</a></td>
                 </tr>

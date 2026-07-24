@@ -2,14 +2,19 @@
 <html lang="en">
 <head>
   <%- include('partials/head') %>
-  <title>Analyze Recording · Welcome Call Admin</title>
+  <title>Analyze Recording · Welcome Call Center</title>
 </head>
 <body>
   <%- include('partials/adminnav') %>
 
   <main class="wide">
+    <div class="page-head">
+      <div>
+        <h1>Analyze Recording</h1>
+        <p>Audit calls that happened outside the platform — upload the audio and get the same transcript, checklist, and flags as a live call.</p>
+      </div>
+    </div>
     <div class="card">
-      <h1>Analyze an uploaded recording</h1>
       <p class="muted">
         Did the welcome call happen outside the platform (e.g. your PM called and recorded it on his phone)?
         Upload the recording here (.mp3, .m4a, .wav — up to 25MB), pick which client it belongs to, and the AI will
@@ -37,7 +42,7 @@
         <label>Recording file
           <input type="file" name="audio" accept=".mp3,.m4a,.wav,.aac,.ogg,audio/*" required>
         </label>
-        <button class="btn btn-primary" type="submit" <%= hasKey ? '' : 'disabled' %>>🔍 Transcribe &amp; audit recording</button>
+        <button class="btn btn-primary" type="submit" <%= hasKey ? '' : 'disabled' %>><%- include('partials/icon', { name: 'search', size: 15 }) %> Transcribe &amp; audit recording</button>
         <p class="fineprint">Processing takes 30–90 seconds depending on call length. You'll land on the client's record with the results.</p>
       </form>
     </div>

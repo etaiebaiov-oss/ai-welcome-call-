@@ -2,14 +2,19 @@
 <html lang="en">
 <head>
   <%- include('partials/head') %>
-  <title>Diagnostics · <%= companyName %> Admin</title>
+  <title>Diagnostics · Welcome Call Center</title>
 </head>
 <body>
   <%- include('partials/adminnav') %>
 
   <main class="wide">
+    <div class="page-head">
+      <div>
+        <h1>Diagnostics</h1>
+        <p>Live checks of your keys, storage, webhook address, and voice assistant sync. Work through red items top to bottom.</p>
+      </div>
+    </div>
     <div class="card">
-      <h1>System diagnostics</h1>
       <% if (allOk) { %>
         <div class="alert alert-success"><strong>All checks passed.</strong> Calls should work — if a customer still sees an error, try the call link again and then re-run this page.</div>
       <% } else { %>
@@ -21,7 +26,7 @@
           <tbody>
             <% checks.forEach((c) => { %>
               <tr>
-                <td style="font-size:1.2rem"><%= c.ok ? '✅' : '❌' %></td>
+                <td><span style="color:var(--<%= c.ok ? 'success' : 'danger' %>);display:inline-flex"><%- include('partials/icon', { name: c.ok ? 'check-circle' : 'alert', size: 18 }) %></span></td>
                 <td><strong><%= c.name %></strong><% if (c.hint) { %><br><span class="muted">→ <%= c.hint %></span><% } %></td>
                 <td class="cell-wrap"><code style="word-break:break-all"><%= c.detail %></code></td>
               </tr>
