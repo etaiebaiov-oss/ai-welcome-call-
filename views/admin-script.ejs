@@ -10,6 +10,13 @@
   <main class="wide">
     <div class="card">
       <h1>Call script</h1>
+      <div class="filter-tabs" style="margin:10px 0 14px">
+        <a class="btn btn-sm filter-btn <%= variant === 'sw' ? 'active' : '' %>" href="/admin/script?variant=sw">Southwest Solar (SW)</a>
+        <a class="btn btn-sm filter-btn <%= variant === 'pss' ? 'active' : '' %>" href="/admin/script?variant=pss">Pacific Sky (PSS)</a>
+      </div>
+      <% if (variant === 'pss') { %>
+        <p class="muted">Editing the <strong>Pacific Sky (PSS)</strong> script — used for calls marked PSS. Until you save a PSS version, PSS calls fall back to the SW script.</p>
+      <% } %>
       <p class="muted">
         This is the script the AI follows on every welcome call. Edit it to match your exact wording —
         changes sync to the voice assistant automatically when you save.
@@ -21,6 +28,7 @@
       <% if (saved) { %><div class="alert alert-success">Script saved and synced to the voice assistant.</div><% } %>
       <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
       <form method="post" action="/admin/script" class="stack">
+        <input type="hidden" name="variant" value="<%= variant %>">
         <textarea name="script" rows="28" class="code-area"><%= script %></textarea>
         <div class="btn-row">
           <button class="btn btn-primary" type="submit">Save &amp; sync script</button>

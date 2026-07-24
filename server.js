@@ -22,6 +22,8 @@ const multer = require('multer');
 const { parseWorkbook, hasChangeOrder } = require('./src/import');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const uploadAudio = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
+const { transcribeAudio, analyzeTranscript } = require('./src/analyze');
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -60,6 +62,7 @@ function extractCallFields(body, createdBy) {
     email: clean(body.email) || null,
     property_address: clean(body.property_address),
     installer: clean(body.installer) || null,
+    script_variant: body.script_variant === 'pss' ? 'pss' : 'sw',
     monthly_payment: clean(body.monthly_payment) || null,
     escalator: clean(body.escalator) || null,
     offset_percent: clean(body.offset_percent) || null,
@@ -159,6 +162,9 @@ function computeFlags(analysis) {
   }
   if (analysis.possible_coercion === true) {
     flags.push(`Possible coercion or pressure observed: ${analysis.coercion_notes || 'see transcript'}`);
+  }
+  if (analysis.off_script_statements) {
+    flags.push(`Caller went off script: ${analysis.off_script_statements}`);
   }
   if (analysis.flag_for_review === true) {
     flags.push(`AI flagged for review: ${analysis.flag_reason || 'see transcript'}`);
@@ -372,7 +378,8 @@ app.post('/admin/import', auth.requireAdmin, upload.single('file'), (req, res) =
       continue;
     }
     const { deal, ...fields } = row;
-    const call = createCall({ ...fields, created_by: 'import', deal_json: JSON.stringify(deal) });
+    const variant = /pacific|pss/i.test(fields.installer || '') ? 'pss' : 'sw';
+    const call = createCall({ ...fields, created_by: 'import', deal_json: JSON.stringify(deal), script_variant: variant });
     created.push({
       name: call.homeowner_name,
       phone: call.phone,
@@ -391,6 +398,58 @@ app.post('/admin/import', auth.requireAdmin, upload.single('file'), (req, res) =
       changeOrders: created.filter((c) => c.changeOrder).length,
     },
   });
+});
+
+app.get('/admin/analyze', auth.requireAdmin, (req, res) => {
+  res.render('admin-analyze', {
+    ...BRAND,
+    calls: listCalls(),
+    hasKey: Boolean((process.env.OPENAI_API_KEY || '').trim()),
+    error: req.query.error || null,
+  });
+});
+
+app.post('/admin/analyze', auth.requireAdmin, uploadAudio.single('audio'), async (req, res) => {
+  const fail = (msg) => res.redirect(`/admin/analyze?error=${encodeURIComponent(msg)}`);
+  const apiKey = (process.env.OPENAI_API_KEY || '').trim();
+  if (!apiKey) return fail('Set the OPENAI_API_KEY variable in Railway first (see the note on this page).');
+  const call = getCallById(Number(req.body.call_id));
+  if (!call) return fail('Pick which client this recording belongs to.');
+  if (!req.file) return fail('Choose an audio file (.mp3, .m4a, .wav — up to 25MB).');
+
+  try {
+    const transcript = await transcribeAudio(req.file.buffer, req.file.originalname, apiKey);
+    const analysis = await analyzeTranscript({
+      transcript,
+      call,
+      script: vapi.getScript(call.script_variant),
+      apiKey,
+    });
+    const { flagged, flags } = computeFlags(analysis);
+
+    const ext = (path.extname(req.file.originalname || '') || '.mp3').toLowerCase();
+    const filename = `manual-upload-${call.id}-${Date.now()}${ext}`;
+    fs.writeFileSync(path.join(RECORDINGS_DIR, filename), req.file.buffer);
+
+    db.prepare(
+      `UPDATE calls SET
+         status = ?, transcript = ?, summary = ?, analysis_json = ?, flags_json = ?,
+         recording_file = ?, ended_reason = 'manual-upload', completed_at = datetime('now')
+       WHERE id = ?`
+    ).run(
+      flagged ? 'flagged' : 'completed',
+      transcript,
+      analysis.summary || null,
+      JSON.stringify(analysis),
+      JSON.stringify(flags),
+      filename,
+      call.id
+    );
+    res.redirect(`/admin/calls/${call.id}`);
+  } catch (err) {
+    console.error('Recording analysis failed:', err.message);
+    fail(`Analysis failed: ${err.message}`);
+  }
 });
 
 app.get('/admin/diagnostics', auth.requireAdmin, async (req, res) => {
@@ -504,7 +563,7 @@ app.get('/admin/calls/:id/script', auth.requireAdmin, (req, res) => {
   if (!call) return res.status(404).send('Not found');
   const vars = vapi.overridesFor(call).variableValues;
   const filledScript = humanizeScript(
-    vapi.getScript().replace(/\{\{(\w+)\}\}/g, (match, key) => (vars[key] !== undefined ? vars[key] : match)),
+    vapi.getScript(call.script_variant).replace(/\{\{(\w+)\}\}/g, (match, key) => (vars[key] !== undefined ? vars[key] : match)),
     call.homeowner_name
   );
   res.render('admin-manual-script', { ...BRAND, call, filledScript });
@@ -526,9 +585,11 @@ app.post('/admin/calls/:id/delete', auth.requireAdmin, (req, res) => {
 });
 
 app.get('/admin/script', auth.requireAdmin, (req, res) => {
+  const variant = req.query.variant === 'pss' ? 'pss' : 'sw';
   res.render('admin-script', {
     ...BRAND,
-    script: vapi.getScript(),
+    variant,
+    script: vapi.getScript(variant),
     defaultScript: vapi.DEFAULT_SCRIPT,
     saved: Boolean(req.query.saved),
     error: req.query.error || null,
@@ -548,13 +609,14 @@ function decodeHtmlEntities(text) {
 }
 
 app.post('/admin/script', auth.requireAdmin, async (req, res) => {
+  const variant = req.body.variant === 'pss' ? 'pss' : 'sw';
   const script = decodeHtmlEntities(String(req.body.script || '').trim());
-  setSetting('script_template', script || vapi.DEFAULT_SCRIPT);
+  setSetting(vapi.scriptSettingKey(variant), script || vapi.DEFAULT_SCRIPT);
   try {
     if (process.env.VAPI_PRIVATE_KEY) await vapi.ensureAssistant();
-    res.redirect('/admin/script?saved=1');
+    res.redirect(`/admin/script?variant=${variant}&saved=1`);
   } catch (err) {
-    res.redirect(`/admin/script?error=${encodeURIComponent('Saved locally, but syncing to Vapi failed: ' + err.message)}`);
+    res.redirect(`/admin/script?variant=${variant}&error=${encodeURIComponent('Saved locally, but syncing to Vapi failed: ' + err.message)}`);
   }
 });
 

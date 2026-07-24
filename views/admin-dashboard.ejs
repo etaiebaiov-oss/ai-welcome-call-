@@ -38,6 +38,12 @@
           <label>Installer / company name <span class="muted">(the AI speaks on behalf of this company)</span>
             <input name="installer" maxlength="200" placeholder="e.g. Sunrise Solar LLC">
           </label>
+          <label>Script version
+            <select name="script_variant">
+              <option value="sw">Southwest Solar (SW)</option>
+              <option value="pss">Pacific Sky (PSS)</option>
+            </select>
+          </label>
           <label>Monthly payment<input name="monthly_payment" maxlength="60" placeholder="e.g. $178.40"></label>
           <label>Annual rate escalator<input name="escalator" maxlength="60" placeholder="e.g. 2.99%"></label>
           <label>Expected energy offset<input name="offset_percent" maxlength="60" placeholder="e.g. 124%"></label>
@@ -71,6 +77,7 @@
             <summary>
               <span class="acc-name"><strong><%= c.homeowner_name %></strong><span class="muted"> · <%= c.phone %></span></span>
               <span class="acc-pills">
+                <span class="pill pill-soft"><%= c.script_variant === 'pss' ? 'PSS' : 'SW' %></span>
                 <% if (c.changeOrder) { %><span class="pill pill-flagged">⚠️ Change order</span><% } %>
                 <% if (c.flags.length) { %><span class="pill pill-flagged">⚠️ <%= c.flags.length %> issue<%= c.flags.length > 1 ? 's' : '' %></span><% } %>
                 <span class="pill pill-<%= c.status %>"><%= c.status.replace('_', ' ') %></span>

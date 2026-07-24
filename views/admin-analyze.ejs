@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>Analyze Recording · Welcome Call Admin</title>
+</head>
+<body>
+  <%- include('partials/adminnav') %>
+
+  <main class="wide">
+    <div class="card">
+      <h1>Analyze an uploaded recording</h1>
+      <p class="muted">
+        Did the welcome call happen outside the platform (e.g. your PM called and recorded it on his phone)?
+        Upload the recording here (.mp3, .m4a, .wav — up to 25MB), pick which client it belongs to, and the AI will
+        transcribe it, audit it against that client's script version (SW or PSS), run the full flag checklist —
+        including <strong>anything the caller said that goes outside the script</strong> — and attach the recording,
+        transcript, and results to the client's record just like a live call.
+      </p>
+      <% if (!hasKey) { %>
+        <div class="alert alert-error">
+          <strong>One-time setup needed:</strong> this feature uses OpenAI for transcription and auditing.
+          Create an API key at platform.openai.com → API keys, then add it in Railway → Variables as
+          <code>OPENAI_API_KEY</code>. A few dollars of credit covers many hours of audio.
+        </div>
+      <% } %>
+      <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+      <form method="post" action="/admin/analyze" enctype="multipart/form-data" class="stack">
+        <label>Which client is this recording for?
+          <select name="call_id" required>
+            <option value="">Select a client…</option>
+            <% calls.forEach((c) => { %>
+              <option value="<%= c.id %>"><%= c.homeowner_name %> · <%= c.phone %> (<%= c.status.replace('_',' ') %>)</option>
+            <% }) %>
+          </select>
+        </label>
+        <label>Recording file
+          <input type="file" name="audio" accept=".mp3,.m4a,.wav,.aac,.ogg,audio/*" required>
+        </label>
+        <button class="btn btn-primary" type="submit" <%= hasKey ? '' : 'disabled' %>>🔍 Transcribe &amp; audit recording</button>
+        <p class="fineprint">Processing takes 30–90 seconds depending on call length. You'll land on the client's record with the results.</p>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

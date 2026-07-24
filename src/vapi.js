@@ -191,17 +191,27 @@ const ANALYSIS_SCHEMA = {
   required: ['call_completed', 'understood_everything', 'had_questions', 'flag_for_review'],
 };
 
-function getScript() {
-  const saved = getSetting('script_template');
-  if (!saved) return DEFAULT_SCRIPT;
-  // Heal scripts saved with HTML-entity escapes by an old Reset-to-default bug.
-  return saved
+// Heal scripts saved with HTML-entity escapes by an old Reset-to-default bug.
+function healEntities(text) {
+  return text
     .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&amp;/g, '&');
+}
+
+// Two script variants for the two installer brands: 'sw' (Southwest Solar,
+// the default) and 'pss' (Pacific Sky). Same verification content, different
+// wording; PSS falls back to the SW script until one is saved.
+function scriptSettingKey(variant) {
+  return variant === 'pss' ? 'script_template_pss' : 'script_template';
+}
+
+function getScript(variant) {
+  const saved = getSetting(scriptSettingKey(variant)) || (variant === 'pss' ? getSetting('script_template') : null);
+  return saved ? healEntities(saved) : DEFAULT_SCRIPT;
 }
 
 // Admin-curated Q&A the assistant may answer from. Anything not covered here
@@ -275,14 +285,7 @@ function buildAssistantPayload() {
   const payload = {
     name: `${COMPANY_NAME} Welcome Call`,
     firstMessage: `Hey there! Can you hear me okay?`,
-    model: {
-      provider: MODEL_PROVIDER,
-      model: MODEL,
-      // Low temperature keeps the assistant close to the script's wording
-      // instead of freelancing its own phrasing.
-      temperature: 0.3,
-      messages: [{ role: 'system', content: buildSystemPrompt(getScript()) }],
-    },
+    model: buildModel('sw'),
     voice: buildVoice(),
     transcriber: { provider: 'deepgram', model: 'nova-3' },
     endCallFunctionEnabled: true,
@@ -312,11 +315,25 @@ function buildAssistantPayload() {
       secret: getOrCreateSecret('webhook_secret'),
     };
   }
+  return payload;
+}
+
+// The full model config (brain + system prompt + optional transfer tool)
+// for a given script variant.
+function buildModel(variant) {
+  const model = {
+    provider: MODEL_PROVIDER,
+    model: MODEL,
+    // Low temperature keeps the assistant close to the script's wording
+    // instead of freelancing its own phrasing.
+    temperature: 0.3,
+    messages: [{ role: 'system', content: buildSystemPrompt(getScript(variant)) }],
+  };
   // Optional live human handoff: if HUMAN_TRANSFER_NUMBER is set, the AI can
   // transfer the call to a real person when the homeowner asks for one.
   const transferNumber = toE164(env('HUMAN_TRANSFER_NUMBER'));
   if (transferNumber) {
-    payload.model.tools = [
+    model.tools = [
       {
         type: 'transferCall',
         destinations: [
@@ -328,12 +345,12 @@ function buildAssistantPayload() {
         ],
       },
     ];
-    payload.model.messages[0].content += `
+    model.messages[0].content += `
 
 HUMAN TRANSFER:
 - If the homeowner clearly asks to speak with a real person, a manager, or their representative - or if they are upset, or you cannot complete the call for any reason and they want help now - use the transferCall tool to connect them to the team at ${transferNumber}. Announce the transfer warmly first. Do not transfer for ordinary questions you can handle or note for follow-up.`;
   }
-  return payload;
+  return model;
 }
 
 async function vapiRequest(method, path, body) {
@@ -409,7 +426,7 @@ function keytermsFor(call) {
 
 // Everything that personalizes the shared assistant for one specific call.
 function overridesFor(call) {
-  return {
+  const overrides = {
     variableValues: variableValuesFor(call),
     transcriber: {
       provider: 'deepgram',
@@ -417,6 +434,9 @@ function overridesFor(call) {
       keyterm: keytermsFor(call),
     },
   };
+  // PSS calls swap in the Pacific Sky script for this call only.
+  if (call.script_variant === 'pss') overrides.model = buildModel('pss');
+  return overrides;
 }
 
 function variableValuesFor(call) {
@@ -470,6 +490,7 @@ module.exports = {
   DEFAULT_SCRIPT,
   DEFAULT_FAQ,
   getScript,
+  scriptSettingKey,
   getFaq,
   ensureAssistant,
   overridesFor,
