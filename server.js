@@ -418,7 +418,28 @@ app.post('/admin/analyze', auth.requireAdmin, uploadAudio.single('audio'), async
   const fail = (msg) => res.redirect(`/admin/analyze?error=${encodeURIComponent(msg)}`);
   const apiKey = (process.env.OPENAI_API_KEY || '').trim();
   if (!apiKey) return fail('Set the OPENAI_API_KEY variable in Railway first (see the note on this page).');
-  const call = getCallById(Number(req.body.call_id));
+  let call;
+  if (req.body.call_id === 'new') {
+    try {
+      call = createCall(
+        extractCallFields(
+          {
+            homeowner_name: req.body.new_name,
+            phone: req.body.new_phone,
+            property_address: req.body.new_address,
+            email: req.body.new_email,
+            installer: req.body.new_installer,
+            script_variant: req.body.new_script_variant,
+          },
+          'upload'
+        )
+      );
+    } catch (err) {
+      return fail(err.message);
+    }
+  } else {
+    call = getCallById(Number(req.body.call_id));
+  }
   if (!call) return fail('Pick which client this recording belongs to.');
   if (!req.file) return fail('Choose an audio file (.mp3, .m4a, .wav — up to 25MB).');
 

@@ -32,13 +32,41 @@
       <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
       <form method="post" action="/admin/analyze" enctype="multipart/form-data" class="stack">
         <label>Which client is this recording for?
-          <select name="call_id" required>
+          <select name="call_id" id="client-select" required>
             <option value="">Select a client…</option>
+            <option value="new">＋ New client (not in the system yet)</option>
             <% calls.forEach((c) => { %>
               <option value="<%= c.id %>"><%= c.homeowner_name %> · <%= c.phone %> (<%= c.status.replace('_',' ') %>)</option>
             <% }) %>
           </select>
         </label>
+        <div id="new-client-fields" class="hidden">
+          <div class="grid-form">
+            <label>Full name <span class="req">*</span><input name="new_name" maxlength="200"></label>
+            <label>Phone <span class="req">*</span><input name="new_phone" maxlength="40" type="tel"></label>
+            <label>Property address <span class="req">*</span><input name="new_address" maxlength="400"></label>
+            <label>Email<input name="new_email" type="email" maxlength="200"></label>
+            <label>Installer<input name="new_installer" maxlength="200"></label>
+            <label>Script version
+              <select name="new_script_variant">
+                <option value="sw">Southwest Solar (SW)</option>
+                <option value="pss">Pacific Sky (PSS)</option>
+              </select>
+            </label>
+          </div>
+          <p class="fineprint">A client record is created automatically and the recording, transcript, and audit are attached to it.</p>
+        </div>
+        <script>
+          const clientSelect = document.getElementById('client-select');
+          const newFields = document.getElementById('new-client-fields');
+          clientSelect.addEventListener('change', () => {
+            const isNew = clientSelect.value === 'new';
+            newFields.classList.toggle('hidden', !isNew);
+            ['new_name', 'new_phone', 'new_address'].forEach((n) => {
+              document.querySelector(`[name="${n}"]`).required = isNew;
+            });
+          });
+        </script>
         <label>Recording file
           <input type="file" name="audio" accept=".mp3,.m4a,.wav,.aac,.ogg,audio/*" required>
         </label>
