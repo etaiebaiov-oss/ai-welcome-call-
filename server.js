@@ -66,13 +66,18 @@ app.get('/', (req, res) => {
 
 function extractCallFields(body, createdBy) {
   const clean = (v) => String(v || '').trim().slice(0, 2000);
+  const script_variant = body.script_variant === 'pss' ? 'pss' : 'sw';
+  // Each script version IS a specific installer, so derive the installer from
+  // the chosen script. An explicit installer (e.g. from a recording upload)
+  // still takes precedence when provided.
+  const INSTALLER_BY_VARIANT = { sw: 'Southwest Solar', pss: 'Pacific Sky' };
   const data = {
     homeowner_name: clean(body.homeowner_name),
     phone: clean(body.phone),
     email: clean(body.email) || null,
     property_address: clean(body.property_address),
-    installer: clean(body.installer) || null,
-    script_variant: body.script_variant === 'pss' ? 'pss' : 'sw',
+    installer: clean(body.installer) || INSTALLER_BY_VARIANT[script_variant],
+    script_variant,
     monthly_payment: clean(body.monthly_payment) || null,
     escalator: clean(body.escalator) || null,
     offset_percent: clean(body.offset_percent) || null,
