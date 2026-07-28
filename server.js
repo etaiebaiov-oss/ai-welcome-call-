@@ -39,8 +39,13 @@ app.use((req, res, next) => {
   next();
 });
 
+// Guard against placeholder/unset company names leaking onto the live,
+// homeowner-facing pages (COMPANY_NAME defaults to a template value on fresh
+// deploys). Falls back to a neutral, presentable name until it's configured.
+const PLACEHOLDER_NAMES = new Set(['', 'template', 'your company']);
+const configuredCompany = (vapi.COMPANY_NAME || '').trim();
 const BRAND = {
-  companyName: vapi.COMPANY_NAME,
+  companyName: PLACEHOLDER_NAMES.has(configuredCompany.toLowerCase()) ? 'Welcome Call Center' : configuredCompany,
   brandColor: (process.env.BRAND_COLOR || '#2563eb').trim(),
 };
 

@@ -8,12 +8,13 @@ const NAV = [
   { href: '/admin/diagnostics', label: 'Diagnostics', match: (p) => p.startsWith('/admin/diagnostics') },
 ];
 const path = typeof currentPath !== 'undefined' ? currentPath : '';
+const brandName = (typeof companyName !== 'undefined' && companyName) ? companyName : 'Welcome Call Center';
 %>
 <nav class="topbar" aria-label="Admin navigation">
   <div class="topbar-inner">
     <a class="brand" href="/admin">
       <%- include('logo', { size: 30 }) %>
-      Welcome Call Center
+      <%= brandName %>
       <span class="role-badge">Admin</span>
     </a>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-nav" onclick="const n=document.getElementById('admin-nav');const open=n.classList.toggle('open');this.setAttribute('aria-expanded',open)">
@@ -22,7 +23,7 @@ const path = typeof currentPath !== 'undefined' ? currentPath : '';
     </button>
     <div class="nav-links" id="admin-nav">
       <% NAV.forEach((item) => { %>
-        <a href="<%= item.href %>" <%= item.match(path) ? 'class="active" aria-current="page"' : '' %>><%= item.label %></a>
+        <a href="<%= item.href %>" <%- item.match(path) ? 'class="active" aria-current="page"' : '' %>><%= item.label %></a>
       <% }) %>
     </div>
     <div class="nav-right">

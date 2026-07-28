@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <%- include('partials/head') %>
-  <title>Sign in · Welcome Call Center</title>
+  <title>Sign in · <%= companyName %></title>
 </head>
 <body>
   <main class="narrow center-page" style="max-width:420px">
@@ -10,7 +10,7 @@
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
         <%- include('partials/logo', { size: 40 }) %>
         <div>
-          <h1 style="font-size:1.25rem;margin:0">Welcome Call Center</h1>
+          <h1 style="font-size:1.25rem;margin:0"><%= companyName %></h1>
           <span class="role-badge">Admin</span>
         </div>
       </div>

@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <%- include('partials/head') %>
-  <title>Your Welcome Call</title>
+  <title>Your Welcome Call · <%= companyName %></title>
 </head>
 <body class="public">
   <nav class="topbar public-bar" aria-label="Main">
     <div class="topbar-inner">
-      <a class="brand" href="/"><%- include('partials/logo', { size: 30 }) %> Welcome Call Center</a>
+      <a class="brand" href="/"><%- include('partials/logo', { size: 30 }) %> <%= companyName %></a>
       <span class="badge badge-neutral" style="margin-left:auto"><%- include('partials/icon', { name: 'shield-check', size: 12 }) %> Secure &amp; recorded</span>
     </div>
   </nav>
@@ -73,7 +73,7 @@
     <% } %>
   </main>
 
-  <footer class="footer">&copy; <%= new Date().getFullYear() %> Welcome Call Center</footer>
+  <footer class="footer">&copy; <%= new Date().getFullYear() %> <%= companyName %></footer>
 
   <% if (!done) { %>
   <script>window.CALL_TOKEN = <%- JSON.stringify(call.token) %>;</script>

@@ -432,12 +432,22 @@ body {
 /* Header: tighter grouping, clearer active tab, quieter logout */
 .topbar-inner { gap: 14px; }
 .nav-links { margin-left: 4px; }
+.nav-links a { position: relative; }
 .nav-links a.active {
-  background: var(--primary-soft); color: var(--primary-strong);
-  box-shadow: inset 0 -2px 0 var(--primary);
+  background: var(--primary-soft); color: var(--primary-strong); font-weight: 700;
+}
+/* Unmistakable current-page marker: solid underline anchored to the tab */
+.nav-links a.active::after {
+  content: ''; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 3px;
+  background: var(--primary); border-radius: 3px 3px 0 0;
 }
 .nav-right .btn { color: var(--faint); }
 .nav-right .btn:hover { color: var(--text); background: var(--surface-tint); }
+
+@media (max-width: 900px) {
+  /* On the stacked mobile menu an underline reads poorly — use a left bar instead */
+  .nav-links a.active::after { left: 0; right: auto; top: 6px; bottom: 6px; width: 3px; height: auto; border-radius: 0 3px 3px 0; }
+}
 
 /* KPI cards: tinted icon container, dominant number, subtle status wash */
 .stat { flex-direction: row; align-items: center; gap: 13px; padding: 14px 16px; }

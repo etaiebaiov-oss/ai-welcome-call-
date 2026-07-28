@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <%- include('partials/head') %>
-  <title>Import · Welcome Call Center</title>
+  <title>Import · <%= companyName %></title>
 </head>
 <body>
   <%- include('partials/adminnav') %>
@@ -35,10 +35,22 @@
       <div class="card">
         <h2>Import complete</h2>
         <div class="stats-row">
-          <div class="stat"><div class="stat-num ok"><%= result.created.length %></div><div class="stat-label">Call links created</div></div>
-          <div class="stat stat-warn"><span class="stat-label"><%- include('partials/icon', { name: 'edit', size: 14 }) %> With change orders</span><span class="stat-num warn"><%= result.changeOrders %></span></div>
-          <div class="stat"><div class="stat-num"><%= result.skippedExisting %></div><div class="stat-label">Skipped (already have a call)</div></div>
-          <div class="stat"><div class="stat-num"><%= result.missingContact + result.badPhone %></div><div class="stat-label">Skipped (missing/bad contact info)</div></div>
+          <div class="stat stat-success">
+            <span class="stat-icon"><%- include('partials/icon', { name: 'check-circle', size: 18 }) %></span>
+            <div><span class="stat-label">Call links created</span><span class="stat-num ok"><%= result.created.length %></span></div>
+          </div>
+          <div class="stat stat-warn">
+            <span class="stat-icon"><%- include('partials/icon', { name: 'edit', size: 18 }) %></span>
+            <div><span class="stat-label">With change orders</span><span class="stat-num warn"><%= result.changeOrders %></span></div>
+          </div>
+          <div class="stat">
+            <span class="stat-icon"><%- include('partials/icon', { name: 'clock', size: 18 }) %></span>
+            <div><span class="stat-label">Skipped (already have a call)</span><span class="stat-num"><%= result.skippedExisting %></span></div>
+          </div>
+          <div class="stat">
+            <span class="stat-icon"><%- include('partials/icon', { name: 'alert', size: 18 }) %></span>
+            <div><span class="stat-label">Skipped (missing/bad contact)</span><span class="stat-num"><%= result.missingContact + result.badPhone %></span></div>
+          </div>
         </div>
 
         <% if (result.created.length) { %>
@@ -77,7 +89,17 @@
                 <tr>
                   <td><strong><%= c.homeowner_name %></strong></td>
                   <td><%= c.phone %></td>
-                  <td><span class="pill pill-<%= c.status %>"><%= c.status.replace('_', ' ') %></span></td>
+                  <td>
+                    <% if (c.status === 'completed') { %>
+                      <span class="badge badge-success"><%- include('partials/icon', { name: 'check', size: 12 }) %> Completed</span>
+                    <% } else if (c.status === 'flagged') { %>
+                      <span class="badge badge-warn"><%- include('partials/icon', { name: 'alert', size: 12 }) %> Flagged</span>
+                    <% } else if (c.status === 'in_progress') { %>
+                      <span class="badge badge-info"><%- include('partials/icon', { name: 'phone', size: 12 }) %> In progress</span>
+                    <% } else { %>
+                      <span class="badge badge-neutral"><%- include('partials/icon', { name: 'clock', size: 12 }) %> Pending</span>
+                    <% } %>
+                  </td>
                   <td><% if (c.changeOrder) { %><span class="badge badge-warn"><%- include('partials/icon', { name: 'edit', size: 12 }) %> Change order</span><% } %></td>
                   <td class="cell-wrap"><a href="<%= c.link %>" target="_blank"><%= c.link %></a></td>
                   <td><a class="btn btn-sm btn-ghost" href="/admin/calls/<%= c.id %>">View →</a></td>

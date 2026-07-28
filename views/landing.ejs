@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <%- include('partials/head') %>
-  <title>Welcome Call Center</title>
+  <title>Welcome Call · <%= companyName %></title>
 </head>
 <body class="public">
   <nav class="topbar public-bar" aria-label="Main">
     <div class="topbar-inner">
-      <a class="brand" href="/"><%- include('partials/logo', { size: 30 }) %> Welcome Call Center</a>
+      <a class="brand" href="/"><%- include('partials/logo', { size: 30 }) %> <%= companyName %></a>
       <span class="badge badge-neutral" style="margin-left:auto"><%- include('partials/icon', { name: 'shield-check', size: 12 }) %> Secure &amp; recorded</span>
     </div>
   </nav>
@@ -42,7 +42,7 @@
       <p class="lead">
         To make sure your call has your exact agreement details, welcome calls use a
         <strong>personal link prepared just for you</strong> — check your text messages or email
-        for a link from our team that looks like <code>welcomeai.online/call/…</code>
+        for a link sent to you by our team.
       </p>
       <p class="muted">
         Can't find your link, or haven't received one yet? Just reach out to your representative
@@ -55,6 +55,6 @@
     </p>
   </main>
 
-  <footer class="footer">&copy; <%= new Date().getFullYear() %> Welcome Call Center · <a href="/admin">Admin</a></footer>
+  <footer class="footer">&copy; <%= new Date().getFullYear() %> <%= companyName %> · <a href="/admin">Admin</a></footer>
 </body>
 </html>
