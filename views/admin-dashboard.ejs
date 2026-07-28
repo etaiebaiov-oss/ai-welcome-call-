@@ -244,7 +244,7 @@
               <option value="pss">Pacific Sky</option>
             </select>
           </label>
-          <label>Monthly payment<input name="monthly_payment" maxlength="60" placeholder="e.g. $178.40"></label>
+          <label>Monthly payment<input name="monthly_payment" id="monthly_payment" inputmode="decimal" maxlength="60" placeholder="$178.40"></label>
           <label>Annual rate escalator
             <select name="escalator">
               <option value="">— Select —</option>
@@ -264,6 +264,25 @@
         </form>
       </div>
     </dialog>
+
+    <script>
+      // Auto-format the monthly payment as US currency: the rep types the
+      // number (e.g. 178.40 or 178) and it renders as $178.40.
+      (function () {
+        const el = document.getElementById('monthly_payment');
+        if (!el) return;
+        const format = () => {
+          const digits = el.value.replace(/[^0-9.]/g, '');
+          const num = parseFloat(digits);
+          el.value = digits && !isNaN(num)
+            ? '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : '';
+        };
+        el.addEventListener('blur', format);
+        const form = el.closest('form');
+        if (form) form.addEventListener('submit', format);
+      })();
+    </script>
   </main>
 </body>
 </html>
