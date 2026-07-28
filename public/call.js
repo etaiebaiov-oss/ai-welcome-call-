@@ -10,6 +10,34 @@ const statusText = document.getElementById('status-text');
 const volumeFill = document.getElementById('volume-fill');
 const errorBox = document.getElementById('call-error');
 const consentRow = document.querySelector('.consent');
+const countdown = document.getElementById('countdown');
+const countdownNum = document.getElementById('countdown-num');
+
+const COUNTDOWN_SECONDS = 5;
+
+// Give the homeowner a moment to settle in before the assistant speaks — a
+// visible countdown, then we connect (which is when the AI says hello).
+function runCountdown(seconds) {
+  return new Promise((resolve) => {
+    let remaining = seconds;
+    countdownNum.textContent = remaining;
+    countdownNum.classList.remove('tick');
+    void countdownNum.offsetWidth; // restart the tick animation
+    countdownNum.classList.add('tick');
+    const timer = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(timer);
+        resolve();
+        return;
+      }
+      countdownNum.textContent = remaining;
+      countdownNum.classList.remove('tick');
+      void countdownNum.offsetWidth;
+      countdownNum.classList.add('tick');
+    }, 1000);
+  });
+}
 
 let vapi = null;
 let wakeLock = null;
@@ -41,7 +69,9 @@ consentCheck.addEventListener('change', () => {
 function showError(message) {
   errorBox.textContent = message;
   errorBox.classList.remove('hidden');
+  countdown.classList.add('hidden');
   preCall.classList.remove('hidden');
+  if (consentRow) consentRow.classList.remove('hidden');
   inCall.classList.add('hidden');
   startBtn.disabled = !consentCheck.checked;
   startBtn.textContent = '🎙️ Try again';
@@ -50,7 +80,7 @@ function showError(message) {
 startBtn.addEventListener('click', async () => {
   errorBox.classList.add('hidden');
   startBtn.disabled = true;
-  startBtn.textContent = 'Connecting…';
+  startBtn.textContent = 'Starting…';
 
   let config;
   try {
@@ -60,6 +90,16 @@ startBtn.addEventListener('click', async () => {
   } catch (err) {
     return showError(err.message || 'Could not reach the call service. Please check your connection and try again.');
   }
+
+  // Visible countdown BEFORE connecting, so the assistant's greeting doesn't
+  // start before the homeowner has settled in.
+  preCall.classList.add('hidden');
+  if (consentRow) consentRow.classList.add('hidden');
+  countdown.classList.remove('hidden');
+  await runCountdown(COUNTDOWN_SECONDS);
+  countdown.classList.add('hidden');
+  inCall.classList.remove('hidden');
+  statusText.textContent = 'Connecting…';
 
   try {
     vapi = new Vapi(config.publicKey);
@@ -101,10 +141,6 @@ startBtn.addEventListener('click', async () => {
     });
 
     const call = await vapi.start(config.assistantId, config.overrides);
-
-    preCall.classList.add('hidden');
-    inCall.classList.remove('hidden');
-    statusText.textContent = 'Connecting…';
 
     if (call && call.id) {
       fetch('/api/call-linked', {

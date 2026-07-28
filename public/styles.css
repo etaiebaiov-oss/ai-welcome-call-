@@ -370,6 +370,20 @@ body.public { background: linear-gradient(180deg, #f4f8fc 0%, var(--bg) 100%); }
 .consent { flex-direction: row; align-items: flex-start; gap: 10px; font-weight: 400; font-size: 0.9rem; margin-bottom: 18px; color: var(--muted); cursor: pointer; }
 .consent input { margin-top: 3px; min-height: 0; width: 17px; height: 17px; accent-color: var(--primary); }
 
+/* Pre-call countdown */
+.countdown { text-align: center; padding: 22px 0 10px; }
+.countdown-num {
+  font-size: 4.2rem; font-weight: 700; line-height: 1; color: var(--primary-strong);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+}
+.countdown-num.tick { animation: countdown-pop 900ms ease-out; }
+@keyframes countdown-pop {
+  0% { transform: scale(1.35); opacity: 0.35; }
+  40% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.countdown-text { color: var(--muted); margin: 10px 0 0; font-size: 0.95rem; }
+
 .call-status { display: flex; align-items: center; gap: 10px; font-weight: 600; margin-bottom: 12px; }
 .live-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); animation: pulse 1.6s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
