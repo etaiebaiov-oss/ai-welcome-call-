@@ -258,7 +258,7 @@ function buildVoice() {
   if (provider === '11labs') {
     voice = {
       provider: '11labs',
-      voiceId: env('VAPI_VOICE_ID') || '21m00Tcm4TlvDq8ikWAM',
+      voiceId: env('VAPI_VOICE_ID') || 'XrExE9yKIg1WjnnlVkGX',
       // turbo = fast, responsive turn-taking. (eleven_multilingual_v2 is
       // richer-sounding but adds noticeable response lag on live calls.)
       model: env('VAPI_11LABS_MODEL') || 'eleven_turbo_v2_5',
@@ -300,8 +300,20 @@ function buildAssistantPayload() {
         'No rush at all! Just let me know when you’re ready to keep going.',
         'Still with me? We can pick right back up whenever you’re ready.',
       ],
-      idleTimeoutSeconds: 15,
+      idleTimeoutSeconds: 25,
       idleMessageMaxSpokenCount: 4,
+    },
+    // Homeowners pause mid-sentence while reading an email or phone number off
+    // their agreement. The defaults treat those pauses as "they're done" and
+    // the assistant talks over them, so wait noticeably longer - especially
+    // after digits.
+    startSpeakingPlan: {
+      waitSeconds: 1,
+      transcriptionEndpointingPlan: {
+        onPunctuationSeconds: 0.4,
+        onNoPunctuationSeconds: 2.5,
+        onNumberSeconds: 2.5,
+      },
     },
     artifactPlan: { recordingEnabled: true },
     analysisPlan: {
