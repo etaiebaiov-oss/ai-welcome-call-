@@ -89,14 +89,17 @@
       </div>
     <% } %>
 
-    <% if (call.recording_file || call.recording_url) { %>
+    <% if (call.recording_file || call.vapi_call_id) { %>
       <div class="card">
         <h2 style="display:flex;align-items:center;gap:8px"><%- include('partials/icon', { name: 'audio', size: 18 }) %> Recording <span class="muted" style="font-weight:normal;font-size:0.8em">(admin-only)</span></h2>
         <% if (call.recording_file) { %>
           <audio controls preload="none" src="/admin/calls/<%= call.id %>/recording" style="width:100%"></audio>
           <p><a class="btn" href="/admin/calls/<%= call.id %>/recording?download=1"><%- include('partials/icon', { name: 'download', size: 15 }) %> Download recording</a></p>
         <% } else { %>
-          <p class="muted">Recording wasn't stored locally, but is available from Vapi: <a href="<%= call.recording_url %>" target="_blank" rel="noopener">open recording</a></p>
+          <p class="muted">This call's audio hasn't been saved to your server yet. Vapi's own links expire, so retrieve it here to keep a permanent copy.</p>
+          <form method="post" action="/admin/calls/<%= call.id %>/fetch-recording" class="inline-form">
+            <button class="btn btn-primary" type="submit"><%- include('partials/icon', { name: 'download', size: 15 }) %> Retrieve recording from Vapi</button>
+          </form>
         <% } %>
       </div>
     <% } %>

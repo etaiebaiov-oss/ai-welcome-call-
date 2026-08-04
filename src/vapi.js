@@ -388,6 +388,28 @@ function testPrivateKey() {
   return vapiRequest('GET', '/assistant?limit=1');
 }
 
+// Vapi's `recordingUrl`/`stereoRecordingUrl` are raw bucket paths that always
+// 400 - only the presigned variants authenticate, and they last 30 minutes.
+// Pick a URL we can actually download from, newest signature first.
+function pickRecordingUrl(artifact) {
+  const a = artifact || {};
+  return (
+    a.presignedStereoUrl ||
+    a.presignedMonoUrl ||
+    (a.recording && (a.recording.presignedStereoUrl || a.recording.presignedMonoUrl)) ||
+    a.stereoRecordingUrl ||
+    a.recordingUrl ||
+    null
+  );
+}
+
+// Re-reads a finished call so we get a freshly signed recording URL. Used to
+// recover recordings whose original download failed or whose link has expired.
+async function fetchRecordingUrl(vapiCallId) {
+  const call = await vapiRequest('GET', `/call/${vapiCallId}`);
+  return pickRecordingUrl(call && call.artifact);
+}
+
 // Creates the Vapi assistant on first use; updates it whenever the script,
 // branding, or config changes (detected via a content hash).
 async function ensureAssistant() {
@@ -508,4 +530,6 @@ module.exports = {
   overridesFor,
   startPhoneCall,
   testPrivateKey,
+  pickRecordingUrl,
+  fetchRecordingUrl,
 };

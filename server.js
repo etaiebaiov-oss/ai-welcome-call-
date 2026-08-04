@@ -209,12 +209,20 @@ app.post('/api/vapi/webhook', async (req, res) => {
   const { flagged, flags } = computeFlags(structured);
 
   let recordingFile = record.recording_file;
-  const recordingUrl = artifact.stereoRecordingUrl || artifact.recordingUrl || message.stereoRecordingUrl || message.recordingUrl || null;
+  const recordingUrl = vapi.pickRecordingUrl(artifact) || vapi.pickRecordingUrl(message);
   if (recordingUrl && !recordingFile) {
     try {
       recordingFile = await downloadRecording(recordingUrl, record.id);
     } catch (err) {
+      // The presigned link may already have lapsed by the time we get here;
+      // ask Vapi for a fresh one before giving up.
       console.error('Failed to store recording locally:', err.message);
+      try {
+        const fresh = await vapi.fetchRecordingUrl(vapiCallId);
+        if (fresh) recordingFile = await downloadRecording(fresh, record.id);
+      } catch (retryErr) {
+        console.error('Recording retry with a fresh URL also failed:', retryErr.message);
+      }
     }
   }
 
@@ -329,6 +337,47 @@ app.get('/admin/calls/:id/recording', auth.requireAdmin, (req, res) => {
     return res.download(filePath, `welcome-call-${safeName || call.id}${path.extname(filePath)}`);
   }
   res.sendFile(filePath);
+});
+
+// Pulls a call's audio down from Vapi using a freshly signed URL. Recovers
+// recordings whose original download failed at end-of-call.
+async function storeRecordingFromVapi(call) {
+  if (!call.vapi_call_id) throw new Error('no Vapi call id on this record');
+  const url = await vapi.fetchRecordingUrl(call.vapi_call_id);
+  if (!url) throw new Error('Vapi has no recording for this call');
+  const filename = await downloadRecording(url, call.id);
+  db.prepare('UPDATE calls SET recording_file = ? WHERE id = ?').run(filename, call.id);
+  return filename;
+}
+
+app.post('/admin/calls/:id/fetch-recording', auth.requireAdmin, async (req, res) => {
+  const call = getCallById(Number(req.params.id));
+  if (!call) return res.status(404).send('Not found');
+  try {
+    await storeRecordingFromVapi(call);
+    res.redirect(`/admin/calls/${call.id}?notice=${encodeURIComponent('Recording retrieved from Vapi and stored.')}`);
+  } catch (err) {
+    res.redirect(`/admin/calls/${call.id}?notice=${encodeURIComponent('Could not retrieve the recording: ' + err.message)}`);
+  }
+});
+
+// Bulk recovery for every finished call that never got its audio stored.
+app.post('/admin/recordings/backfill', auth.requireAdmin, async (req, res) => {
+  const missing = listCalls().filter((c) => c.vapi_call_id && !c.recording_file);
+  let stored = 0;
+  const failures = [];
+  for (const call of missing) {
+    try {
+      await storeRecordingFromVapi(call);
+      stored += 1;
+    } catch (err) {
+      failures.push(`${call.homeowner_name}: ${err.message}`);
+    }
+  }
+  const summary = `Recording backfill: stored ${stored} of ${missing.length}.${
+    failures.length ? ` Failed - ${failures.slice(0, 5).join('; ')}` : ''
+  }`;
+  res.redirect(`/admin?notice=${encodeURIComponent(summary)}`);
 });
 
 app.post('/admin/calls/:id/dial', auth.requireAdmin, async (req, res) => {
