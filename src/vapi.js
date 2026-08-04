@@ -315,6 +315,17 @@ function buildAssistantPayload() {
         onNumberSeconds: 2.5,
       },
     },
+    // These calls happen in living rooms with a TV on and family talking, and
+    // the compliance disclosures have to be delivered whole. By default any
+    // sound stops the assistant mid-sentence, so require a few actual words
+    // before treating it as a real interruption.
+    stopSpeakingPlan: {
+      numWords: parseInt(env('VAPI_INTERRUPT_WORDS'), 10) || 3,
+      voiceSeconds: 0.4,
+      backoffSeconds: 2,
+    },
+    // Krisp filtering so background chatter never reaches the transcriber.
+    backgroundSpeechDenoisingPlan: { smartDenoisingPlan: { enabled: true } },
     artifactPlan: { recordingEnabled: true },
     analysisPlan: {
       summaryPlan: { enabled: true },
