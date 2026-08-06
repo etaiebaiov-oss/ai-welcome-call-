@@ -267,7 +267,7 @@ app.get('/admin/login', (req, res) => {
 app.post('/admin/login', (req, res) => {
   const adminPassword = (process.env.ADMIN_PASSWORD || '').trim();
   if (adminPassword && auth.safeEqual(String(req.body.password || '').trim(), adminPassword)) {
-    auth.login(res);
+    auth.login(res, 'admin');
     return res.redirect('/admin');
   }
   res.status(401).render('admin-login', { ...BRAND, error: 'Incorrect password.' });
@@ -276,6 +276,54 @@ app.post('/admin/login', (req, res) => {
 app.post('/admin/logout', (req, res) => {
   auth.logout(res);
   res.redirect('/admin/login');
+});
+
+// ---------------------------------------------------------------------------
+// Designer console: create a welcome-call link and copy it. Deliberately has
+// no access to call records, transcripts, recordings, scripts, or imports.
+// ---------------------------------------------------------------------------
+
+app.get('/create/login', (req, res) => {
+  if (auth.roleOf(req)) return res.redirect('/create');
+  res.render('create-login', { ...BRAND, error: null });
+});
+
+app.post('/create/login', (req, res) => {
+  const given = String(req.body.password || '').trim();
+  for (const role of ['designer', 'admin']) {
+    const password = (process.env[role === 'admin' ? 'ADMIN_PASSWORD' : 'DESIGNER_PASSWORD'] || '').trim();
+    if (password && auth.safeEqual(given, password)) {
+      auth.login(res, role);
+      return res.redirect('/create');
+    }
+  }
+  res.status(401).render('create-login', { ...BRAND, error: 'Incorrect password.' });
+});
+
+app.post('/create/logout', (req, res) => {
+  auth.logout(res);
+  res.redirect('/create/login');
+});
+
+app.get('/create', auth.requireCreator, (req, res) => {
+  // Looked up by token, never by id - an id in the URL would let a designer
+  // page through other homeowners' links by counting upward.
+  const created = req.query.link ? getCallByToken(String(req.query.link)) : null;
+  res.render('create', {
+    ...BRAND,
+    appUrl: appUrl(req),
+    created: created || null,
+    error: req.query.error || null,
+  });
+});
+
+app.post('/create', auth.requireCreator, (req, res) => {
+  try {
+    const call = createCall(extractCallFields(req.body, auth.roleOf(req) === 'admin' ? 'admin' : 'designer'));
+    res.redirect(`/create?link=${encodeURIComponent(call.token)}`);
+  } catch (err) {
+    res.redirect(`/create?error=${encodeURIComponent(err.message)}`);
+  }
 });
 
 app.get('/admin', auth.requireAdmin, (req, res) => {

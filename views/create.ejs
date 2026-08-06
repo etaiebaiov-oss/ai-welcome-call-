@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>New welcome call · <%= companyName %></title>
+</head>
+<body>
+  <nav class="topbar" aria-label="Navigation">
+    <div class="topbar-inner">
+      <span class="brand">
+        <%- include('partials/logo', { size: 30 }) %>
+        <%= companyName %>
+        <span class="role-badge">Welcome call links</span>
+      </span>
+      <div class="nav-right" style="margin-left:auto">
+        <form method="post" action="/create/logout" class="inline-form">
+          <button class="btn btn-ghost btn-sm" type="submit"><%- include('partials/icon', { name: 'logout', size: 15 }) %> Log out</button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  <main class="narrow">
+    <div class="page-head">
+      <div>
+        <h1>New welcome call</h1>
+        <p>Fill in the homeowner's details, then send the link to the rep at the house.</p>
+      </div>
+    </div>
+
+    <% if (error) { %>
+      <div class="alert alert-error"><%- include('partials/icon', { name: 'alert', size: 16 }) %><div><%= error %></div></div>
+    <% } %>
+
+    <% if (created) { %>
+      <div class="alert alert-success">
+        <%- include('partials/icon', { name: 'check-circle', size: 16 }) %>
+        <div style="flex:1">
+          Link ready for <strong><%= created.homeowner_name %></strong>. Copy it and send it to the rep:
+          <div class="share-row">
+            <input class="share-input" id="share-link" readonly value="<%= appUrl %>/call/<%= created.token %>" onclick="this.select()">
+            <button class="btn btn-sm" type="button" id="copy-btn"><%- include('partials/icon', { name: 'copy', size: 14 }) %> Copy</button>
+          </div>
+        </div>
+      </div>
+      <p><a class="btn" href="/create"><%- include('partials/icon', { name: 'plus', size: 15 }) %> Create another</a></p>
+    <% } %>
+
+    <div class="card">
+      <form method="post" action="/create" class="grid-form">
+        <label>Full name <span class="req">*</span><input name="homeowner_name" required maxlength="200" autofocus></label>
+        <label>Phone <span class="req">*</span><input name="phone" required maxlength="40" type="tel"></label>
+        <label>Email<input name="email" type="email" maxlength="200"></label>
+        <label>Property address <span class="req">*</span><input name="property_address" required maxlength="400"></label>
+        <label>Installer
+          <select name="script_variant">
+            <option value="sw">Southwest Solar</option>
+            <option value="pss">Pacific Sky</option>
+          </select>
+        </label>
+        <label>Monthly payment<input name="monthly_payment" id="monthly_payment" inputmode="decimal" maxlength="60" placeholder="$178.40"></label>
+        <label>Annual rate escalator
+          <select name="escalator">
+            <option value="">— Select —</option>
+            <option value="0%">0%</option>
+            <option value="0.99%">0.99%</option>
+            <option value="1.99%">1.99%</option>
+            <option value="2.99%">2.99%</option>
+            <option value="3.5%">3.5%</option>
+            <option value="3.99%">3.99%</option>
+          </select>
+        </label>
+        <label>Expected energy offset<input name="offset_percent" maxlength="60" placeholder="e.g. 124%"></label>
+        <div class="grid-span btn-row" style="justify-content:flex-end">
+          <button class="btn btn-primary" type="submit"><%- include('partials/icon', { name: 'plus', size: 15 }) %> Create call link</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <footer class="footer">&copy; <%= new Date().getFullYear() %> <%= companyName %></footer>
+
+  <script>
+    // Same currency helper the admin form uses: type 178.4, get $178.40.
+    (function () {
+      const el = document.getElementById('monthly_payment');
+      if (el) {
+        const format = () => {
+          const digits = el.value.replace(/[^0-9.]/g, '');
+          const num = parseFloat(digits);
+          el.value = digits && !isNaN(num)
+            ? '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : '';
+        };
+        el.addEventListener('blur', format);
+        const form = el.closest('form');
+        if (form) form.addEventListener('submit', format);
+      }
+
+      const copyBtn = document.getElementById('copy-btn');
+      const link = document.getElementById('share-link');
+      if (copyBtn && link) {
+        copyBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(link.value);
+          } catch (err) {
+            link.select();
+            document.execCommand('copy');
+          }
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => { copyBtn.textContent = 'Copy'; }, 2000);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

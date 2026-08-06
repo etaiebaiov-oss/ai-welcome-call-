@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>Sign in · <%= companyName %></title>
+</head>
+<body>
+  <main class="narrow center-page" style="max-width:420px">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <%- include('partials/logo', { size: 40 }) %>
+        <div>
+          <h1 style="font-size:1.25rem;margin:0"><%= companyName %></h1>
+          <span class="role-badge">Welcome call links</span>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:0">Sign in to create a welcome call link to send to your rep.</p>
+      <% if (error) { %>
+        <div class="alert alert-error"><%- include('partials/icon', { name: 'alert', size: 16 }) %><div><%= error %></div></div>
+      <% } %>
+      <form method="post" action="/create/login" class="stack">
+        <label>Password
+          <input type="password" name="password" required autofocus autocomplete="current-password">
+        </label>
+        <button class="btn btn-primary" type="submit">Sign in</button>
+      </form>
+    </div>
+  </main>
+</body>
+</html>
