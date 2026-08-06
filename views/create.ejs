@@ -58,7 +58,7 @@
             <option value="pss">Pacific Sky</option>
           </select>
         </label>
-        <label>Monthly payment<input name="monthly_payment" id="monthly_payment" inputmode="decimal" maxlength="60" placeholder="$178.40"></label>
+        <label>Monthly payment<input name="monthly_payment" data-mask="currency" inputmode="decimal" maxlength="60" placeholder="$178.40"></label>
         <label>Annual rate escalator
           <select name="escalator">
             <option value="">— Select —</option>
@@ -70,7 +70,7 @@
             <option value="3.99%">3.99%</option>
           </select>
         </label>
-        <label>Expected energy offset<input name="offset_percent" maxlength="60" placeholder="e.g. 124%"></label>
+        <label>Expected energy offset<input name="offset_percent" data-mask="percent" inputmode="decimal" maxlength="60" placeholder="124%"></label>
         <div class="grid-span btn-row" style="justify-content:flex-end">
           <button class="btn btn-primary" type="submit"><%- include('partials/icon', { name: 'plus', size: 15 }) %> Create call link</button>
         </div>
@@ -80,23 +80,9 @@
 
   <footer class="footer">&copy; <%= new Date().getFullYear() %> <%= companyName %></footer>
 
+  <script src="/form-masks.js"></script>
   <script>
-    // Same currency helper the admin form uses: type 178.4, get $178.40.
     (function () {
-      const el = document.getElementById('monthly_payment');
-      if (el) {
-        const format = () => {
-          const digits = el.value.replace(/[^0-9.]/g, '');
-          const num = parseFloat(digits);
-          el.value = digits && !isNaN(num)
-            ? '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-            : '';
-        };
-        el.addEventListener('blur', format);
-        const form = el.closest('form');
-        if (form) form.addEventListener('submit', format);
-      }
-
       const copyBtn = document.getElementById('copy-btn');
       const link = document.getElementById('share-link');
       if (copyBtn && link) {
