@@ -324,8 +324,14 @@ function buildAssistantPayload() {
       voiceSeconds: 0.4,
       backoffSeconds: 2,
     },
-    // Krisp filtering so background chatter never reaches the transcriber.
-    backgroundSpeechDenoisingPlan: { smartDenoisingPlan: { enabled: true } },
+    // Krisp filtering is OFF deliberately. It was enabled 2026-08-06 and every
+    // "assistant did not receive customer audio" failure we have dates from
+    // after that - it intermittently breaks microphone capture on phones,
+    // which is what most homeowners use. Re-enable only behind a real device
+    // test, via VAPI_SMART_DENOISING=true.
+    backgroundSpeechDenoisingPlan: {
+      smartDenoisingPlan: { enabled: env('VAPI_SMART_DENOISING') === 'true' },
+    },
     artifactPlan: { recordingEnabled: true },
     analysisPlan: {
       summaryPlan: { enabled: true },

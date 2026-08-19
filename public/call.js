@@ -1,4 +1,8 @@
-import Vapi from 'https://esm.sh/@vapi-ai/web';
+// PINNED ON PURPOSE. This used to import the unversioned URL, which meant every
+// homeowner silently got whatever the newest release was. 2.6.2 shipped on
+// 2026-08-14 and calls stopped connecting that same evening. Do not drop the
+// version without testing a real call on a phone first.
+import Vapi from 'https://esm.sh/@vapi-ai/web@2.6.1';
 
 const consentCheck = document.getElementById('consent-check');
 const startBtn = document.getElementById('start-btn');
@@ -43,6 +47,18 @@ let vapi = null;
 let wakeLock = null;
 let callActive = false;
 let callEnded = false;
+// Set when an error arrives before we're connected. Held rather than shown,
+// because the SDK reports non-fatal problems (microphone noise-processing
+// failures, for one) on the same channel as real ones, and the call usually
+// connects anyway a moment later.
+let pendingFailure = null;
+
+function cancelPendingFailure() {
+  if (pendingFailure) {
+    clearTimeout(pendingFailure);
+    pendingFailure = null;
+  }
+}
 
 // Phones lock their screens mid-call, which suspends the browser tab and
 // kills the WebRTC connection ("customer disconnected"). Keep the screen
@@ -67,6 +83,7 @@ consentCheck.addEventListener('change', () => {
 });
 
 function showError(message) {
+  cancelPendingFailure();
   errorBox.textContent = message;
   errorBox.classList.remove('hidden');
   countdown.classList.add('hidden');
@@ -105,6 +122,7 @@ startBtn.addEventListener('click', async () => {
     vapi = new Vapi(config.publicKey);
 
     vapi.on('call-start', () => {
+      cancelPendingFailure();
       statusText.textContent = 'Connected — say hello!';
       callActive = true;
       keepScreenAwake();
@@ -122,6 +140,7 @@ startBtn.addEventListener('click', async () => {
     });
 
     vapi.on('call-end', () => {
+      cancelPendingFailure();
       callActive = false;
       callEnded = true;
       releaseWakeLock();
@@ -134,10 +153,17 @@ startBtn.addEventListener('click', async () => {
 
     vapi.on('error', (err) => {
       console.error('vapi error', err);
-      // Disconnect noise fired after the call already ended (e.g. silence
-      // timeout ejection) is not a user-facing problem - don't alarm them.
-      if (callEnded) return;
-      showError('The call hit a technical problem. Please try again — if it keeps happening, contact our team.');
+      // Already connected, or already hung up: whatever this is, it isn't
+      // something to throw a failure screen at the homeowner over.
+      if (callEnded || callActive) return;
+      // Otherwise give the connection a few seconds to succeed anyway before
+      // giving up on it, so a recoverable hiccup doesn't end the call.
+      if (pendingFailure) return;
+      pendingFailure = setTimeout(() => {
+        pendingFailure = null;
+        if (callActive || callEnded) return;
+        showError('The call hit a technical problem. Please try again — if it keeps happening, contact our team.');
+      }, 8000);
     });
 
     const call = await vapi.start(config.assistantId, config.overrides);
