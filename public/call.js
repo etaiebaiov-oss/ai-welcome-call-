@@ -155,9 +155,16 @@ startBtn.addEventListener('click', async () => {
 
     vapi.on('call-end', () => {
       cancelPendingFailure();
+      releaseWakeLock();
+      // A call that ends without ever having connected did not happen. Saying
+      // "all done" there tells the homeowner they completed a verification
+      // they were never actually asked a single question in.
+      if (!callActive) {
+        showError('The call ended before it could start. Please press “Try again” — if it keeps happening, contact our team.');
+        return;
+      }
       callActive = false;
       callEnded = true;
-      releaseWakeLock();
       inCall.classList.add('hidden');
       postCall.classList.remove('hidden');
       if (consentRow) consentRow.classList.add('hidden');

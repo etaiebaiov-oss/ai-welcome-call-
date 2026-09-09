@@ -212,6 +212,21 @@ app.post('/api/vapi/webhook', async (req, res) => {
   const structured = analysis.structuredData || null;
   const { flagged, flags } = computeFlags(structured);
 
+  const transcript = artifact.transcript || message.transcript || null;
+  const durationSeconds = typeof message.durationSeconds === 'number' ? message.durationSeconds : null;
+  // A call that produced no conversation at all never happened - the assistant
+  // failed to join, or it dropped on the spot. Recording that as "completed"
+  // is doubly wrong: the record reads as a verification that was never
+  // performed, and the homeowner's link is spent so they cannot retry it.
+  // Leave it pending, keep the reason, and let them use the same link again.
+  const neverHappened = !transcript && (durationSeconds === null || durationSeconds < 15);
+  if (neverHappened) {
+    console.warn(
+      `[webhook] call ${record.id} produced no conversation ` +
+      `(duration=${durationSeconds}s, reason=${message.endedReason || 'unknown'}) - leaving it pending so the link still works`
+    );
+  }
+
   let recordingFile = record.recording_file;
   const recordingUrl = vapi.pickRecordingUrl(artifact) || vapi.pickRecordingUrl(message);
   if (recordingUrl && !recordingFile) {
@@ -241,18 +256,19 @@ app.post('/api/vapi/webhook', async (req, res) => {
        recording_url = COALESCE(?, recording_url),
        duration_seconds = ?,
        ended_reason = ?,
-       completed_at = datetime('now')
+       completed_at = CASE WHEN ? THEN NULL ELSE datetime('now') END
      WHERE id = ?`
   ).run(
-    flagged ? 'flagged' : 'completed',
-    artifact.transcript || message.transcript || null,
+    neverHappened ? 'pending' : (flagged ? 'flagged' : 'completed'),
+    transcript,
     analysis.summary || null,
     structured ? JSON.stringify(structured) : null,
     JSON.stringify(flags),
     recordingFile || null,
     recordingUrl,
-    typeof message.durationSeconds === 'number' ? message.durationSeconds : null,
+    durationSeconds,
     message.endedReason || null,
+    neverHappened ? 1 : 0,
     record.id
   );
 
