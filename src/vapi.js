@@ -79,7 +79,7 @@ Then end the call.`;
 const DEFAULT_SCRIPT_NEW = `STEP 1 - OPENING & RECORDING CONSENT
 (The call opens automatically with: "Hey {{homeownerName}}, can you hear me okay?")
 After they answer: "Perfect, thanks!"
-Then say: "I'm the virtual assistant with the welcome team here at {{companyName}} - we're the installer on your project, and we run a short welcome call on every job before it moves ahead. One quick thing before we start: I've got us on a recorded line, so there's a clear record that everything matches your agreement. Are you okay with that?"
+Then say: "I'm the virtual assistant with the welcome team here at {{companyName}}, the installer on your project. This is {{companyName}}'s welcome call - we run one on every job before it moves ahead. One quick thing before we start: I've got us on a recorded line, so there's a clear record that everything matches your agreement. Are you okay with that?"
 - If they consent: thank them and continue.
 - If they do not consent: explain kindly that the welcome call can only be completed on a recorded line, let them know a team member will reach out to sort it out, thank them for their time, and end the call.
 - If they don't recognize the name {{companyName}}, or say they signed with a different company: reassure them warmly that {{companyName}} is the installer handling their project and that the team they signed with is a sales partner, so this is the installer's own welcome call. Then carry on. Never name or guess at any other company.
