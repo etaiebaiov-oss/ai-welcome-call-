@@ -22,7 +22,7 @@
         site survey, notes) attached. Homeowners with a <strong>change order</strong> are flagged automatically.
         Rows whose phone number already has a call on file are skipped, so re-uploading an updated board is safe.
       </p>
-      <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+      <% if (error) { %><div class="alert alert-error"><%- include('partials/icon', { name: 'alert', size: 16 }) %><div><%= error %></div></div><% } %>
       <form method="post" action="/admin/import" enctype="multipart/form-data" class="stack">
         <label>Spreadsheet file
           <input type="file" name="file" accept=".xlsx,.xls,.csv" required>
@@ -65,7 +65,7 @@
                     <td><strong><%= c.name %></strong></td>
                     <td><%= c.phone %></td>
                     <td><% if (c.changeOrder) { %><span class="badge badge-warn"><%- include('partials/icon', { name: 'edit', size: 12 }) %> Change order</span><% } %></td>
-                    <td class="cell-wrap"><a href="<%= c.link %>" target="_blank"><%= c.link %></a></td>
+                    <td><a class="link-trunc" href="<%= c.link %>" target="_blank"><%= c.link %></a></td>
                   </tr>
                 <% }) %>
               </tbody>
@@ -101,15 +101,33 @@
                     <% } %>
                   </td>
                   <td><% if (c.changeOrder) { %><span class="badge badge-warn"><%- include('partials/icon', { name: 'edit', size: 12 }) %> Change order</span><% } %></td>
-                  <td class="cell-wrap"><a href="<%= c.link %>" target="_blank"><%= c.link %></a></td>
-                  <td><a class="btn btn-sm btn-ghost" href="/admin/calls/<%= c.id %>">View →</a></td>
+                  <td><a class="link-trunc" href="<%= c.link %>" target="_blank"><%= c.link %></a></td>
+                  <td class="cell-action">
+                    <button class="btn btn-sm copy-link" type="button" data-link="<%= c.link %>"><%- include('partials/icon', { name: 'copy', size: 13 }) %> Copy</button>
+                    <a class="btn btn-sm" href="/admin/calls/<%= c.id %>">View →</a>
+                  </td>
                 </tr>
               <% }) %>
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
       </div>
     <% } %>
   </main>
+
+  <script>
+    document.querySelectorAll('.copy-link').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const original = btn.innerHTML;
+        try {
+          await navigator.clipboard.writeText(btn.dataset.link);
+        } catch (err) {
+          return;
+        }
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.innerHTML = original; }, 2000);
+      });
+    });
+  </script>
 </body>
 </html>

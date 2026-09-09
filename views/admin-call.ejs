@@ -8,6 +8,15 @@
   <%- include('partials/adminnav') %>
 
   <main class="wide">
+    <% const fmtDate = (s) => {
+      if (!s) return '—';
+      try {
+        const d = new Date(String(s).replace(' ', 'T') + 'Z');
+        if (isNaN(d)) return s;
+        return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+          + ' · ' + d.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
+      } catch (e) { return s; }
+    }; %>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
       <a class="muted" href="/admin">← Back to dashboard</a>
       <form method="post" action="/admin/calls/<%= call.id %>/delete" class="inline-form">
@@ -19,7 +28,15 @@
     <div class="card">
       <div class="detail-header">
         <h1><%= call.homeowner_name %></h1>
-        <span class="pill pill-<%= call.status %>"><%= call.status.replace('_', ' ') %></span>
+        <% if (call.status === 'completed') { %>
+          <span class="badge badge-success"><%- include('partials/icon', { name: 'check', size: 12 }) %> Completed</span>
+        <% } else if (call.status === 'flagged') { %>
+          <span class="badge badge-warn"><%- include('partials/icon', { name: 'alert', size: 12 }) %> Flagged</span>
+        <% } else if (call.status === 'in_progress') { %>
+          <span class="badge badge-info"><%- include('partials/icon', { name: 'phone', size: 12 }) %> In progress</span>
+        <% } else { %>
+          <span class="badge badge-neutral"><%- include('partials/icon', { name: 'clock', size: 12 }) %> Pending</span>
+        <% } %>
       </div>
 
       <div class="detail-grid">
@@ -30,8 +47,8 @@
         <div><span class="muted">Monthly payment</span><br><%= call.monthly_payment || '—' %></div>
         <div><span class="muted">Rate escalator</span><br><%= call.escalator || '—' %></div>
         <div><span class="muted">Energy offset</span><br><%= call.offset_percent || '—' %></div>
-        <div><span class="muted">Created</span><br><%= call.created_at %> (by <%= call.created_by %>)</div>
-        <div><span class="muted">Completed</span><br><%= call.completed_at || '—' %></div>
+        <div><span class="muted">Created</span><br><%= fmtDate(call.created_at) %> <span style="color:var(--faint);font-size:0.86em">· by <%= call.created_by %></span></div>
+        <div><span class="muted">Completed</span><br><%= fmtDate(call.completed_at) %></div>
         <% if (call.duration_seconds) { %><div><span class="muted">Duration</span><br><%= Math.round(call.duration_seconds / 60) %> min <%= Math.round(call.duration_seconds % 60) %> sec</div><% } %>
         <% if (call.ended_reason) { %><div><span class="muted">Ended reason</span><br><code><%= call.ended_reason %></code></div><% } %>
       </div>

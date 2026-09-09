@@ -24,12 +24,15 @@
       </p>
       <% if (!hasKey) { %>
         <div class="alert alert-error">
-          <strong>One-time setup needed:</strong> this feature uses OpenAI for transcription and auditing.
-          Create an API key at platform.openai.com → API keys, then add it in Railway → Variables as
-          <code>OPENAI_API_KEY</code>. A few dollars of credit covers many hours of audio.
+          <%- include('partials/icon', { name: 'alert', size: 16 }) %>
+          <div>
+            <strong>One-time setup needed:</strong> this feature uses OpenAI for transcription and auditing.
+            Create an API key at platform.openai.com → API keys, then add it in Railway → Variables as
+            <code>OPENAI_API_KEY</code>. A few dollars of credit covers many hours of audio.
+          </div>
         </div>
       <% } %>
-      <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+      <% if (error) { %><div class="alert alert-error"><%- include('partials/icon', { name: 'alert', size: 16 }) %><div><%= error %></div></div><% } %>
       <form method="post" action="/admin/analyze" enctype="multipart/form-data" class="stack" id="analyze-form">
         <label>Which client is this recording for?
           <select name="call_id" id="client-select" required>

@@ -5,12 +5,12 @@
   <title>Sign in · <%= companyName %></title>
 </head>
 <body>
-  <main class="narrow center-page" style="max-width:420px">
-    <div class="card">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+  <main class="auth-page">
+    <div class="card auth-card">
+      <div class="auth-brand">
         <%- include('partials/logo', { size: 40 }) %>
         <div>
-          <h1 style="font-size:1.25rem;margin:0"><%= companyName %></h1>
+          <h1><%= companyName %></h1>
           <span class="role-badge">Welcome call links</span>
         </div>
       </div>

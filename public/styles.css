@@ -103,7 +103,7 @@ code { background: #e9eef5; padding: 2px 6px; border-radius: 6px; font-size: 0.8
 
 /* Page header pattern */
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 6px 0 20px; }
-.page-head p { margin: 2px 0 0; color: var(--muted); max-width: 640px; }
+.page-head p { margin: 3px 0 0; color: var(--muted); max-width: 780px; }
 .page-head .page-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
 /* ==== App header / navigation ============================================ */
@@ -182,13 +182,29 @@ code { background: #e9eef5; padding: 2px 6px; border-radius: 6px; font-size: 0.8
 /* ==== Forms =============================================================== */
 
 .stack { display: flex; flex-direction: column; gap: 14px; }
-label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 0.88rem; color: var(--text); }
+/* Block, not flex: a trailing "*" is a separate node and a flex label would
+   drop it onto its own line under the field name. */
+label { display: block; font-weight: 600; font-size: 0.88rem; color: var(--text); }
+label > input, label > select, label > textarea { display: block; width: 100%; margin-top: 6px; }
 input, textarea, select {
   font: inherit; font-weight: 400; padding: 10px 12px; min-height: 42px;
   border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);
   transition: border-color var(--trans), box-shadow var(--trans);
 }
-textarea { min-height: 0; }
+textarea { min-height: 0; width: 100%; }
+select { cursor: pointer; }
+
+/* The native file control is the one unstyled thing left in the forms. */
+input[type="file"] { padding: 7px 10px; cursor: pointer; }
+input[type="file"]::file-selector-button {
+  font: inherit; font-weight: 600; font-size: 0.85rem; cursor: pointer;
+  margin: 0 12px 0 0; padding: 6px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong); background: var(--surface-tint); color: var(--text);
+  transition: background var(--trans), border-color var(--trans), color var(--trans);
+}
+input[type="file"]::file-selector-button:hover {
+  background: var(--primary-soft); border-color: var(--primary); color: var(--primary-strong);
+}
 input:focus, textarea:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
 .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: end; }
 .grid-span { grid-column: 1 / -1; }
@@ -347,13 +363,16 @@ dialog.modal::backdrop { background: rgba(20, 38, 59, 0.45); }
 /* ==== Homeowner (public) pages =========================================== */
 
 body.public { background: linear-gradient(180deg, #f4f8fc 0%, var(--bg) 100%); }
-.hero { max-width: 720px; margin: 0 auto; padding: 46px 18px 6px; text-align: center; }
+.hero { max-width: 880px; margin: 0 auto; padding: 48px 18px 6px; text-align: center; }
 .hero h1 { font-size: clamp(1.7rem, 4.5vw, 2.35rem); }
-.hero-points { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 26px; text-align: left; }
+.hero .lead { max-width: 660px; margin-left: auto; margin-right: auto; }
+/* Wide enough that each headline stays on one line instead of wrapping twice. */
+.hero-points { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 28px; text-align: left; }
 .point {
-  display: flex; gap: 12px; align-items: flex-start; flex: 1 1 200px; max-width: 240px; font-size: 0.88rem; color: var(--muted);
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow-sm);
+  display: flex; gap: 13px; align-items: flex-start; flex: 1 1 250px; max-width: 300px; font-size: 0.88rem; color: var(--muted);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 15px 17px; box-shadow: var(--shadow-sm);
 }
+.point strong { display: block; margin-bottom: 2px; }
 .point strong { color: var(--text); }
 .point-icon {
   flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
@@ -361,13 +380,17 @@ body.public { background: linear-gradient(180deg, #f4f8fc 0%, var(--bg) 100%); }
 }
 .point-icon .icon { width: 17px; height: 17px; }
 
+/* Two columns so the homeowner sees their whole file at a glance instead of
+   scrolling a tall single-file list on a phone-sized card. */
 .info-box {
-  background: var(--primary-soft); border: 1px solid var(--primary-border); border-radius: var(--radius-sm);
-  padding: 14px 16px; margin: 18px 0; display: grid; gap: 7px; font-size: 0.93rem;
+  background: var(--primary-soft); border: 1px solid var(--primary-border); border-radius: var(--radius);
+  padding: 17px 19px; margin: 20px 0; font-size: 0.95rem;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); gap: 14px 22px;
 }
-.info-box .muted { font-size: 0.75rem; font-weight: 650; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary-strong); opacity: 0.75; display: block; }
+.info-box > div { min-width: 0; overflow-wrap: anywhere; }
+.info-box .muted { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--primary-strong); opacity: 0.7; display: block; margin-bottom: 2px; }
 
-.consent { flex-direction: row; align-items: flex-start; gap: 10px; font-weight: 400; font-size: 0.9rem; margin-bottom: 18px; color: var(--muted); cursor: pointer; }
+.consent { display: flex; flex-direction: row; align-items: flex-start; gap: 10px; font-weight: 400; font-size: 0.9rem; margin-bottom: 18px; color: var(--muted); cursor: pointer; }
 .consent input { margin-top: 3px; min-height: 0; width: 17px; height: 17px; accent-color: var(--primary); }
 
 /* Pre-call countdown */
@@ -491,7 +514,7 @@ body {
 .filter-btn.active .muted { opacity: 0.75; }
 
 /* Cohesive call list: one elevated container, column headers, hairline rows */
-.list-card { --cols: 26px minmax(190px, 1.6fr) 54px 148px minmax(150px, 1fr) 176px; padding: 0; overflow: hidden; }
+.list-card { --cols: 26px minmax(190px, 1.6fr) 142px minmax(170px, 1fr) 168px; padding: 0; overflow: hidden; }
 .list-head {
   display: grid; grid-template-columns: var(--cols); gap: 12px; align-items: center;
   padding: 9px 18px; border-bottom: 1px solid var(--border); background: var(--surface-tint);
@@ -534,9 +557,25 @@ body {
   .list-head { display: none; }
   .list-card { --cols: none; }
   .list-card .call-acc summary { grid-template-columns: 22px 1fr auto; row-gap: 6px; }
-  .list-card .cell-source, .list-card .acc-date { display: none; }
+  .list-card .acc-date { display: none; }
   .list-card .cell-issues, .list-card .cell-status { grid-column: 2 / -1; }
 }
+
+/* ==== Auth pages ========================================================== */
+
+.auth-page { min-height: 100vh; display: grid; place-items: center; padding: 32px 18px 64px; }
+.auth-card { width: 100%; max-width: 420px; margin: 0; padding: 30px 30px 28px; box-shadow: var(--shadow-md); }
+.auth-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.auth-brand h1 { font-size: 1.22rem; margin: 0 0 3px; letter-spacing: -0.01em; }
+
+/* A td's max-width is ignored in auto table layout, so cap the block-level
+   anchor instead - otherwise long share URLs run under the row's buttons. */
+.link-trunc {
+  display: block; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--font-mono); font-size: 0.8rem;
+}
+.cell-action { white-space: nowrap; text-align: right; }
+.cell-action .btn + .btn { margin-left: 6px; }
 
 /* Skeleton loading (matches final row anatomy) */
 .skeleton-row { display: grid; grid-template-columns: var(--cols, 1fr); gap: 12px; padding: 13px 18px; border-bottom: 1px solid var(--border); }
