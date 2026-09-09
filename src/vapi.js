@@ -396,15 +396,16 @@ function buildVoice(variant) {
   return voice;
 }
 
-function buildAssistantPayload() {
+function buildAssistantPayload(variant) {
+  const v = normalizeVariant(variant);
   const appUrl = env('APP_URL').replace(/\/+$/, '');
   const payload = {
-    name: `${COMPANY_NAME} Welcome Call`,
+    // The old account keeps its original name so its payload hash is unchanged
+    // and its long-serving assistant is left exactly as it is.
+    name: v === 'new' ? `${COMPANY_NAME} Welcome Call (New)` : `${COMPANY_NAME} Welcome Call`,
     firstMessage: `Hey {{homeownerName}}, can you hear me okay?`,
-    // The shared assistant is built from the old account's script and voice;
-    // every call then overrides both for whichever variant it belongs to.
-    model: buildModel('old'),
-    voice: buildVoice('old'),
+    model: buildModel(v),
+    voice: buildVoice(v),
     transcriber: { provider: 'deepgram', model: 'nova-3' },
     endCallFunctionEnabled: true,
     maxDurationSeconds: 900,
@@ -544,14 +545,20 @@ async function fetchRecordingUrl(vapiCallId) {
   return pickRecordingUrl(call && call.artifact);
 }
 
-// Creates the Vapi assistant on first use; updates it whenever the script,
-// branding, or config changes (detected via a content hash).
-async function ensureAssistant() {
-  const payload = buildAssistantPayload();
+// Creates the Vapi assistant for a variant on first use; updates it whenever
+// the script, branding, or config changes (detected via a content hash).
+// One real assistant per account, each carrying its own script and voice -
+// rather than one shared assistant reshaped per call, which leaves the call
+// hanging on "Connecting" if the override is rejected.
+async function ensureAssistant(variant) {
+  const v = normalizeVariant(variant);
+  const idKey = v === 'new' ? 'vapi_assistant_id_new' : 'vapi_assistant_id';
+  const hashKey = v === 'new' ? 'vapi_assistant_hash_new' : 'vapi_assistant_hash';
+  const payload = buildAssistantPayload(v);
   const hash = crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
-  let assistantId = getSetting('vapi_assistant_id');
+  let assistantId = getSetting(idKey);
 
-  if (assistantId && getSetting('vapi_assistant_hash') === hash) return assistantId;
+  if (assistantId && getSetting(hashKey) === hash) return assistantId;
 
   if (assistantId) {
     try {
@@ -565,9 +572,9 @@ async function ensureAssistant() {
   if (!assistantId) {
     const created = await vapiRequest('POST', '/assistant', payload);
     assistantId = created.id;
-    setSetting('vapi_assistant_id', assistantId);
+    setSetting(idKey, assistantId);
   }
-  setSetting('vapi_assistant_hash', hash);
+  setSetting(hashKey, hash);
   return assistantId;
 }
 
@@ -594,13 +601,10 @@ function keytermsFor(call) {
 
 // Everything that personalizes the shared assistant for one specific call.
 function overridesFor(call) {
-  // Always send both, so a call runs its own account's script and voice
-  // regardless of what the shared assistant happens to be configured with.
-  const variant = normalizeVariant(call.script_variant);
+  // Only per-homeowner data belongs here. The script and voice come from the
+  // account's own assistant, picked by id in /api/call-config.
   return {
     variableValues: variableValuesFor(call),
-    model: buildModel(variant),
-    voice: buildVoice(variant),
     transcriber: {
       provider: 'deepgram',
       model: 'nova-3',
@@ -646,7 +650,7 @@ async function startPhoneCall(call, overrideNumber) {
   const rawNumber = overrideNumber || call.phone;
   const number = toE164(rawNumber);
   if (!number) throw new Error(`"${rawNumber}" is not a valid US phone number - check it and try again`);
-  const assistantId = await ensureAssistant();
+  const assistantId = await ensureAssistant(call.script_variant);
   return vapiRequest('POST', '/call', {
     assistantId,
     phoneNumberId,

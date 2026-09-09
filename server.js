@@ -110,7 +110,8 @@ app.get('/api/call-config/:token', async (req, res) => {
     return res.status(503).json({ error: 'Voice service is not configured yet. Please contact support.' });
   }
   try {
-    const assistantId = await vapi.ensureAssistant();
+    // Each account has its own assistant, carrying its own script and voice.
+    const assistantId = await vapi.ensureAssistant(call.script_variant);
     res.json({
       publicKey: (process.env.VAPI_PUBLIC_KEY || '').trim(),
       assistantId,
@@ -691,10 +692,13 @@ app.get('/admin/diagnostics', auth.requireAdmin, async (req, res) => {
     }
 
     try {
-      const assistantId = await vapi.ensureAssistant();
-      add('Voice assistant is created and in sync', true, `assistant ${assistantId}`);
+      const ids = [];
+      for (const key of Object.keys(vapi.VARIANTS)) {
+        ids.push(`${vapi.VARIANTS[key].label}: ${await vapi.ensureAssistant(key)}`);
+      }
+      add('Voice assistants are created and in sync', true, ids.join(' · '));
     } catch (err) {
-      add('Voice assistant is created and in sync', false, err.message,
+      add('Voice assistants are created and in sync', false, err.message,
         'This is the exact error stopping calls from starting. Fix the items above first; if they are all green, send this error text to your developer.');
     }
   }
@@ -805,7 +809,7 @@ app.post('/admin/script', auth.requireAdmin, async (req, res) => {
   const script = decodeHtmlEntities(String(req.body.script || '').trim());
   setSetting(vapi.scriptSettingKey(variant), script || vapi.defaultScriptFor(variant));
   try {
-    if (process.env.VAPI_PRIVATE_KEY) await vapi.ensureAssistant();
+    if (process.env.VAPI_PRIVATE_KEY) await vapi.ensureAssistant(variant);
     res.redirect(`/admin/script?variant=${variant}&saved=1`);
   } catch (err) {
     res.redirect(`/admin/script?variant=${variant}&error=${encodeURIComponent('Saved locally, but syncing to Vapi failed: ' + err.message)}`);

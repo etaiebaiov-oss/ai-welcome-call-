@@ -52,11 +52,19 @@ let callEnded = false;
 // failures, for one) on the same channel as real ones, and the call usually
 // connects anyway a moment later.
 let pendingFailure = null;
+// Separate from pendingFailure: the room can open without the assistant ever
+// joining, which raises no error at all and leaves the homeowner watching
+// "Connecting..." indefinitely. Give up on it rather than hanging forever.
+let connectTimeout = null;
 
 function cancelPendingFailure() {
   if (pendingFailure) {
     clearTimeout(pendingFailure);
     pendingFailure = null;
+  }
+  if (connectTimeout) {
+    clearTimeout(connectTimeout);
+    connectTimeout = null;
   }
 }
 
@@ -117,6 +125,12 @@ startBtn.addEventListener('click', async () => {
   countdown.classList.add('hidden');
   inCall.classList.remove('hidden');
   statusText.textContent = 'Connecting…';
+  connectTimeout = setTimeout(() => {
+    connectTimeout = null;
+    if (callActive || callEnded) return;
+    if (vapi) { try { vapi.stop(); } catch (_) { /* already gone */ } }
+    showError('The call could not connect. Please try again — if it keeps happening, contact our team.');
+  }, 30000);
 
   try {
     vapi = new Vapi(config.publicKey);
