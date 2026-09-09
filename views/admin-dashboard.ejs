@@ -109,7 +109,6 @@
               <strong><%= c.homeowner_name %></strong>
               <span class="sub"><%= c.phone %></span>
             </span>
-            <span class="cell-source"><%= c.script_variant === 'pss' ? 'PSS' : 'SW' %></span>
             <span class="cell-status">
               <% if (c.status === 'completed') { %>
                 <span class="badge badge-success"><%- include('partials/icon', { name: 'check', size: 12 }) %> Completed</span>
@@ -238,12 +237,6 @@
           <label>Phone <span class="req">*</span><input name="phone" required maxlength="40" type="tel"></label>
           <label>Email<input name="email" type="email" maxlength="200"></label>
           <label>Property address <span class="req">*</span><input name="property_address" required maxlength="400"></label>
-          <label>Installer
-            <select name="script_variant">
-              <option value="sw">Southwest Solar</option>
-              <option value="pss">Pacific Sky</option>
-            </select>
-          </label>
           <label>Monthly payment<input name="monthly_payment" data-mask="currency" inputmode="decimal" maxlength="60" placeholder="$178.40"></label>
           <label>Annual rate escalator
             <select name="escalator">

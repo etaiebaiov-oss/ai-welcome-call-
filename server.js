@@ -49,6 +49,10 @@ const BRAND = {
   brandColor: (process.env.BRAND_COLOR || '#2563eb').trim(),
 };
 
+// Every welcome call is run by the installer, so the AI always speaks for one
+// company regardless of which sales partner sold the job.
+const DEFAULT_INSTALLER = (process.env.INSTALLER_NAME || 'Southwest Solar').trim();
+
 function appUrl(req) {
   const configured = (process.env.APP_URL || '').trim().replace(/\/+$/, '');
   return configured || `${req.protocol}://${req.get('host')}`;
@@ -66,18 +70,15 @@ app.get('/', (req, res) => {
 
 function extractCallFields(body, createdBy) {
   const clean = (v) => String(v || '').trim().slice(0, 2000);
-  const script_variant = body.script_variant === 'pss' ? 'pss' : 'sw';
-  // Each script version IS a specific installer, so derive the installer from
-  // the chosen script. An explicit installer (e.g. from a recording upload)
-  // still takes precedence when provided.
-  const INSTALLER_BY_VARIANT = { sw: 'Southwest Solar', pss: 'Pacific Sky' };
   const data = {
     homeowner_name: clean(body.homeowner_name),
     phone: clean(body.phone),
     email: clean(body.email) || null,
     property_address: clean(body.property_address),
-    installer: clean(body.installer) || INSTALLER_BY_VARIANT[script_variant],
-    script_variant,
+    // The welcome call is always the installer's own call, whichever sales
+    // partner sold the job. An explicit installer (e.g. from a recording
+    // upload) still takes precedence when provided.
+    installer: clean(body.installer) || DEFAULT_INSTALLER,
     monthly_payment: clean(body.monthly_payment) || null,
     escalator: clean(body.escalator) || null,
     offset_percent: clean(body.offset_percent) || null,
@@ -490,8 +491,7 @@ app.post('/admin/import', auth.requireAdmin, upload.single('file'), (req, res) =
       continue;
     }
     const { deal, ...fields } = row;
-    const variant = /pacific|pss/i.test(fields.installer || '') ? 'pss' : 'sw';
-    const call = createCall({ ...fields, created_by: 'import', deal_json: JSON.stringify(deal), script_variant: variant });
+    const call = createCall({ ...fields, created_by: 'import', deal_json: JSON.stringify(deal) });
     created.push({
       name: call.homeowner_name,
       phone: call.phone,
@@ -577,7 +577,6 @@ app.post('/admin/analyze', auth.requireAdmin, uploadAudio.single('audio'), async
               property_address: identity.property_address,
               email: identity.email,
               installer: identity.installer,
-              script_variant: /pacific|pss/i.test(identity.installer || '') ? 'pss' : 'sw',
             },
             'upload'
           )
@@ -597,7 +596,6 @@ app.post('/admin/analyze', auth.requireAdmin, uploadAudio.single('audio'), async
             property_address: req.body.new_address,
             email: req.body.new_email,
             installer: req.body.new_installer,
-            script_variant: req.body.new_script_variant,
           },
           'upload'
         )
@@ -607,11 +605,11 @@ app.post('/admin/analyze', auth.requireAdmin, uploadAudio.single('audio'), async
     }
     if (!call) return fail('Pick which client this recording belongs to.');
 
-    console.log(`[analyze] auditing against ${call.script_variant || 'sw'} script for call ${call.id}...`);
+    console.log(`[analyze] auditing call ${call.id} against the welcome-call script...`);
     const analysis = await analyzeTranscript({
       transcript,
       call,
-      script: vapi.getScript(call.script_variant),
+      script: vapi.getScript(),
       apiKey,
     });
     console.log(`[analyze] audit complete for call ${call.id}`);
@@ -753,7 +751,7 @@ app.get('/admin/calls/:id/script', auth.requireAdmin, (req, res) => {
   if (!call) return res.status(404).send('Not found');
   const vars = vapi.overridesFor(call).variableValues;
   const filledScript = humanizeScript(
-    vapi.getScript(call.script_variant).replace(/\{\{(\w+)\}\}/g, (match, key) => (vars[key] !== undefined ? vars[key] : match)),
+    vapi.getScript().replace(/\{\{(\w+)\}\}/g, (match, key) => (vars[key] !== undefined ? vars[key] : match)),
     call.homeowner_name
   );
   res.render('admin-manual-script', { ...BRAND, call, filledScript });
@@ -775,11 +773,9 @@ app.post('/admin/calls/:id/delete', auth.requireAdmin, (req, res) => {
 });
 
 app.get('/admin/script', auth.requireAdmin, (req, res) => {
-  const variant = req.query.variant === 'pss' ? 'pss' : 'sw';
   res.render('admin-script', {
     ...BRAND,
-    variant,
-    script: vapi.getScript(variant),
+    script: vapi.getScript(),
     defaultScript: vapi.DEFAULT_SCRIPT,
     saved: Boolean(req.query.saved),
     error: req.query.error || null,
@@ -799,14 +795,13 @@ function decodeHtmlEntities(text) {
 }
 
 app.post('/admin/script', auth.requireAdmin, async (req, res) => {
-  const variant = req.body.variant === 'pss' ? 'pss' : 'sw';
   const script = decodeHtmlEntities(String(req.body.script || '').trim());
-  setSetting(vapi.scriptSettingKey(variant), script || vapi.DEFAULT_SCRIPT);
+  setSetting(vapi.scriptSettingKey(), script || vapi.DEFAULT_SCRIPT);
   try {
     if (process.env.VAPI_PRIVATE_KEY) await vapi.ensureAssistant();
-    res.redirect(`/admin/script?variant=${variant}&saved=1`);
+    res.redirect('/admin/script?saved=1');
   } catch (err) {
-    res.redirect(`/admin/script?variant=${variant}&error=${encodeURIComponent('Saved locally, but syncing to Vapi failed: ' + err.message)}`);
+    res.redirect(`/admin/script?error=${encodeURIComponent('Saved locally, but syncing to Vapi failed: ' + err.message)}`);
   }
 });
 

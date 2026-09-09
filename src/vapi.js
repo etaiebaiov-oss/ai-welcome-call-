@@ -24,14 +24,17 @@ const MODEL = env('VAPI_MODEL') || 'gpt-4.1';
 const DEFAULT_SCRIPT = `STEP 1 - OPENING & RECORDING CONSENT
 (The call opens automatically with: "Hey {{homeownerName}}, can you hear me okay?")
 After they answer: "Great!"
-Then say: "I'm the virtual assistant for the welcome team at {{companyName}}. Quick heads up, this call is on a recorded line, just to make sure everything we go over matches what's in your agreement. Is that okay?"
+Then say: "I'm the virtual assistant for the welcome team at {{companyName}}, the installer on your project. This is {{companyName}}'s internal welcome call - we do one on every project before it moves forward. Quick heads up, it's on a recorded line, just to make sure everything we go over matches what's in your agreement. Is that okay?"
 - If they consent: thank them and continue.
 - If they do not consent: politely explain the welcome call can only be completed on a recorded line, let them know a team member will reach out, thank them for their time, and end the call.
+- If they don't recognize the name {{companyName}}, or say they signed with a different company: reassure them warmly that {{companyName}} is the installer handling their project and that the team they signed with is a sales partner, so this is the installer's own welcome call. Then continue. Never name or guess at any other company.
 
 STEP 2 - FAMILY & DECISION MAKER
-Say: "Wonderful. Before we start, were any family members or friends part of the sales process with you?"
-- If yes and they're nearby: "Great! If they're nearby, could they hop on for a second and share their full name, age, and relationship to you?" (Record the information.)
-- If they're not nearby: "No problem. Could you tell me their first and last name, phone number, age, and relationship to you?" (Record the information.)
+Say: "Before we start, were any family members or friends part of the sales process with you?"
+- If no: acknowledge warmly ("Got it, thank you!") and go straight to the decision-maker question below.
+- If yes: "Great! If they're nearby, could they hop on for a second and share their full name, age, and relationship to you? If they're not with you, just let me know." (Record the information.)
+- STOP after that line and wait for their answer. Do NOT read the next line unless they tell you the person is not with them.
+- Only if they say the person is NOT there: "No problem. Could you tell me their first and last name, phone number, age, and relationship to you?" (Record the information.)
 Then ask: "And are you the main decision maker for your home, or does a family member or friend help you with decisions like this?"
 - If someone helps make decisions: "No problem! Could you bring them on the line, or just tell me their name, age, and relationship to you?" (Record the information.)
 
@@ -51,16 +54,16 @@ STEP 4 - UNDERSTANDING THE AGREEMENT
 (PACING: slow down noticeably during this section. Use short sentences, pause after each point, and get a clear "yes" or "I understand" before moving on.)
 Say: "Now I'd like to go over a few key points, just to make sure everything matches what you were shown."
 Ask each confirmation individually:
-- "Please confirm that you understand this is a privately offered Power Purchase Agreement and is not affiliated with, or administered by, any government agency."
 - "You understand the solar system and equipment are owned by another company, and you're simply purchasing the power it produces. Correct?"
 - "You'll receive a separate bill from Palmetto LightReach for the energy your system produces. Does that make sense?"
 - "You understand you'll still be connected to your utility company. If your home uses more electricity than your system's guaranteed production, now or in the future, your utility company will bill you separately. Correct?"
-- (Read the payment, escalator, and term slowly and clearly, with a pause between each.) "Confirming the numbers - your monthly payment to Palmetto LightReach is {{monthlyPayment}}, with a yearly increase of {{escalator}}, for {{termLength}}. Does that match what you were shown?"
+- (Read the payment, escalator, and term slowly and clearly, with a pause between each.) "Confirming the numbers - your monthly payment to Palmetto LightReach is {{monthlyPayment}}, with a yearly escalator of {{escalator}}, for {{termLength}}. Does that match what you were shown?"
+- "Please confirm that you understand this is a privately offered Power Purchase Agreement and is not affiliated with, or administered by, any government agency."
 - "Based on your proposal, your system is expected to produce about {{offsetPercent}} of your electricity usage. Does that make sense?"
 - "Savings projections are estimates, and actual savings may vary based on your electricity usage and utility rates. Does that make sense?"
 
 STEP 5 - WRAP UP
-Say: "That's everything I needed today. Thank you for your time - you were great. Congratulations again on your solar project! If you have any questions, feel free to reach out anytime. Have a great day!"
+Say: "That's everything I needed today. Thank you for your time - you were great. Congratulations again on your project, and if anything comes up, the {{companyName}} team is always here. Have a great day!"
 - If they ask a question before ending the call: answer warmly using ONLY the information available in the homeowner's file. If you cannot answer their question, reassure them that a {{companyName}} team member will follow up personally.
 Then end the call.`;
 
@@ -202,15 +205,16 @@ function healEntities(text) {
     .replace(/&amp;/g, '&');
 }
 
-// Two script variants for the two installer brands: 'sw' (Southwest Solar,
-// the default) and 'pss' (Pacific Sky). Same verification content, different
-// wording; PSS falls back to the SW script until one is saved.
-function scriptSettingKey(variant) {
-  return variant === 'pss' ? 'script_template_pss' : 'script_template';
+// One script for every call. The welcome call is the installer's own
+// verification, so it reads the same no matter which sales partner sold the
+// job - the opening in STEP 1 is what establishes whose call this is.
+// (Callers still pass the legacy per-call variant; it is ignored.)
+function scriptSettingKey() {
+  return 'script_template';
 }
 
-function getScript(variant) {
-  const saved = getSetting(scriptSettingKey(variant)) || (variant === 'pss' ? getSetting('script_template') : null);
+function getScript() {
+  const saved = getSetting(scriptSettingKey());
   return saved ? healEntities(saved) : DEFAULT_SCRIPT;
 }
 
@@ -285,7 +289,7 @@ function buildAssistantPayload() {
   const payload = {
     name: `${COMPANY_NAME} Welcome Call`,
     firstMessage: `Hey {{homeownerName}}, can you hear me okay?`,
-    model: buildModel('sw'),
+    model: buildModel(),
     voice: buildVoice(),
     transcriber: { provider: 'deepgram', model: 'nova-3' },
     endCallFunctionEnabled: true,
@@ -347,16 +351,15 @@ function buildAssistantPayload() {
   return payload;
 }
 
-// The full model config (brain + system prompt + optional transfer tool)
-// for a given script variant.
-function buildModel(variant) {
+// The full model config: brain + system prompt + optional transfer tool.
+function buildModel() {
   const model = {
     provider: MODEL_PROVIDER,
     model: MODEL,
     // Low temperature keeps the assistant close to the script's wording
     // instead of freelancing its own phrasing.
     temperature: 0.3,
-    messages: [{ role: 'system', content: buildSystemPrompt(getScript(variant)) }],
+    messages: [{ role: 'system', content: buildSystemPrompt(getScript()) }],
   };
   // Optional live human handoff: if HUMAN_TRANSFER_NUMBER is set, the AI can
   // transfer the call to a real person when the homeowner asks for one.
@@ -485,8 +488,6 @@ function overridesFor(call) {
       keyterm: keytermsFor(call),
     },
   };
-  // PSS calls swap in the Pacific Sky script for this call only.
-  if (call.script_variant === 'pss') overrides.model = buildModel('pss');
   return overrides;
 }
 

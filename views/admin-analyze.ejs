@@ -18,7 +18,7 @@
       <p class="muted">
         Did the welcome call happen outside the platform (e.g. your PM called and recorded it on his phone)?
         Upload the recording here (.mp3, .m4a, .wav — up to 25MB), pick which client it belongs to, and the AI will
-        transcribe it, audit it against that client's script version (SW or PSS), run the full flag checklist —
+        transcribe it, audit it against the welcome-call script, run the full flag checklist —
         including <strong>anything the caller said that goes outside the script</strong> — and attach the recording,
         transcript, and results to the client's record just like a live call.
       </p>
@@ -47,12 +47,6 @@
             <label>Property address <span class="req">*</span><input name="new_address" maxlength="400"></label>
             <label>Email<input name="new_email" type="email" maxlength="200"></label>
             <label>Installer<input name="new_installer" maxlength="200"></label>
-            <label>Script version
-              <select name="new_script_variant">
-                <option value="sw">Southwest Solar (SW)</option>
-                <option value="pss">Pacific Sky (PSS)</option>
-              </select>
-            </label>
           </div>
           <p class="fineprint">A client record is created automatically and the recording, transcript, and audit are attached to it.</p>
         </div>
