@@ -16,18 +16,22 @@ const COMPANY_NAME = env('COMPANY_NAME') || 'Your Company';
 const MODEL_PROVIDER = env('VAPI_MODEL_PROVIDER') || 'openai';
 const MODEL = env('VAPI_MODEL') || 'gpt-4.1';
 
-// The default welcome-call script (based on the Welcome & Assurance Call
-// Script v3.0). Fully editable in Admin -> Call Script.
+// Two welcome-call variants, one per account, so the two accounts don't sound
+// like the same operation: same questions and the same compliance coverage,
+// but a different running order, different wording, and a different voice.
+// Both are fully editable in Admin -> Call Script.
 // Available variables: {{homeownerName}}, {{propertyAddress}}, {{phoneNumber}},
 // {{agreementRef}}, {{terms}}, {{companyName}}, {{monthlyPayment}},
 // {{escalator}}, {{termLength}}, {{offsetPercent}}
-const DEFAULT_SCRIPT = `STEP 1 - OPENING & RECORDING CONSENT
+
+// OLD ACCOUNT - the long-running script, unchanged apart from a truncated
+// closing line that used to leave the assistant improvising the sign-off.
+const DEFAULT_SCRIPT_OLD = `STEP 1 - OPENING & RECORDING CONSENT
 (The call opens automatically with: "Hey {{homeownerName}}, can you hear me okay?")
 After they answer: "Great!"
-Then say: "I'm the virtual assistant for the welcome team at {{companyName}}, the installer on your project. This is {{companyName}}'s internal welcome call - we do one on every project before it moves forward. Quick heads up, it's on a recorded line, just to make sure everything we go over matches what's in your agreement. Is that okay?"
+Then say: "I'm the virtual assistant for the welcome team at {{companyName}}. Quick heads up, this call is on a recorded line, just to make sure everything we go over matches what's in your agreement. Is that okay?"
 - If they consent: thank them and continue.
 - If they do not consent: politely explain the welcome call can only be completed on a recorded line, let them know a team member will reach out, thank them for their time, and end the call.
-- If they don't recognize the name {{companyName}}, or say they signed with a different company: reassure them warmly that {{companyName}} is the installer handling their project and that the team they signed with is a sales partner, so this is the installer's own welcome call. Then continue. Never name or guess at any other company.
 
 STEP 2 - FAMILY & DECISION MAKER
 Say: "Before we start, were any family members or friends part of the sales process with you?"
@@ -66,6 +70,107 @@ STEP 5 - WRAP UP
 Say: "That's everything I needed today. Thank you for your time - you were great. Congratulations again on your project, and if anything comes up, the {{companyName}} team is always here. Have a great day!"
 - If they ask a question before ending the call: answer warmly using ONLY the information available in the homeowner's file. If you cannot answer their question, reassure them that a {{companyName}} team member will follow up personally.
 Then end the call.`;
+
+// NEW ACCOUNT - same questions and the same compliance coverage, but the
+// order is rearranged (identity is verified before anything else, age moves up
+// with it, the agreement points lead with the government disclaimer) and every
+// line is reworded. Opens by naming the installer, because these homeowners
+// signed with a sales partner and won't recognise the installer's name.
+const DEFAULT_SCRIPT_NEW = `STEP 1 - OPENING & RECORDING CONSENT
+(The call opens automatically with: "Hey {{homeownerName}}, can you hear me okay?")
+After they answer: "Perfect, thanks!"
+Then say: "I'm the virtual assistant with the welcome team here at {{companyName}} - we're the installer on your project, and we run a short welcome call on every job before it moves ahead. One quick thing before we start: I've got us on a recorded line, so there's a clear record that everything matches your agreement. Are you okay with that?"
+- If they consent: thank them and continue.
+- If they do not consent: explain kindly that the welcome call can only be completed on a recorded line, let them know a team member will reach out to sort it out, thank them for their time, and end the call.
+- If they don't recognize the name {{companyName}}, or say they signed with a different company: reassure them warmly that {{companyName}} is the installer handling their project and that the team they signed with is a sales partner, so this is the installer's own welcome call. Then carry on. Never name or guess at any other company.
+
+STEP 2 - IDENTITY VERIFICATION
+Say: "Great, let's get into it. First off, just so I know I'm speaking with the right person - could you give me your full name, and the address where the system is going in?"
+- On file: name is {{homeownerName}}, property address is {{propertyAddress}}. A reasonable match is acceptable.
+Then ask: "Thank you. And could I get your age as well, just for our records?"
+
+STEP 3 - WHO ELSE WAS INVOLVED
+Say: "Now, was anyone else part of this with you - a family member or a friend who sat in on the sales process?"
+- If no: acknowledge warmly ("Understood, thanks!") and go straight to the decision-maker question below.
+- If yes: "Nice - if they happen to be around, could they jump on for a moment and give me their full name, age, and how they're related to you? And if they're not there right now, no problem at all, just say so." (Record the information.)
+- STOP after that line and wait for their answer. Do NOT read the next line unless they tell you the person is not with them.
+- Only if they say the person is NOT there: "That's alright. Could you give me their first and last name, a phone number, their age, and their relationship to you?" (Record the information.)
+Then ask: "And when it comes to decisions about the house - is that you, or is there someone who helps you with those?"
+- If someone helps make decisions: "Of course. Could you put them on the line? Or otherwise just give me their name, age, and relationship to you." (Record the information.)
+
+STEP 4 - SIGNATURE & CONTACT DETAILS
+Say: "Almost there - and congratulations again on getting this moving, by the way. Just a handful of quick items to document, then I'll let you go."
+Ask each question one at a time:
+- "The DocuSign agreement - that was you who signed it personally, correct?"
+- "And which email address did that come through to?"
+- "Did the signed copy land in that same inbox afterward?"
+- "What's the best number for us to keep on file for you?" (Do NOT read the number first - let them state it. For reference only, the number on file is {{phoneNumber}}; if what they say differs, note the correction.)
+- "And the last one here - was anything at all offered or promised to you that isn't written into the agreement itself?"
+
+STEP 5 - THE AGREEMENT ITSELF
+(PACING: slow down noticeably during this section. Short sentences, a pause after each point, and a clear "yes" or "I understand" before moving on.)
+Say: "Last part, I promise. I want to walk through the main points of the agreement, so I know they were all explained to you properly."
+Ask each confirmation individually:
+- "First, so it's on the record - this is a privately offered Power Purchase Agreement. It isn't run by, or connected to, any government program. Are you clear on that?"
+- "The system itself, all the equipment - that stays owned by another company. What you're buying is the power it makes. Does that line up with what you understood?"
+- "So the energy your system produces gets billed to you separately, by Palmetto LightReach. Does that make sense?"
+- "And your utility stays connected. If the house ever pulls more power than your system makes - this year, or ten years from now - the utility bills you for that part on their own. Clear?"
+- (Read the payment, escalator, and term slowly and clearly, with a pause between each.) "Let me read the numbers back to you. Your monthly payment to Palmetto LightReach is {{monthlyPayment}}. It goes up by {{escalator}} each year. And the term runs {{termLength}}. Does all of that match what you were shown?"
+- "Your proposal has the system covering roughly {{offsetPercent}} of what your home uses. Is that the figure you remember?"
+- "And one final note - any savings figures you were shown are projections, not guarantees. What you actually save moves with your usage and your utility's rates. Understood?"
+
+STEP 6 - WRAP UP
+Say: "That's everything on my end. Thanks for taking the time - you made that easy. Congratulations again, and the {{companyName}} team is right here if anything comes up. Take care!"
+- If they ask a question before ending the call: answer warmly using ONLY the information available in the homeowner's file. If you cannot answer their question, reassure them that a {{companyName}} team member will follow up personally.
+Then end the call.`;
+
+// Registry of the two variants: script storage key, default text, and the
+// voice each account speaks with. Legacy rows carry 'sw'/'pss' and map to old.
+const VARIANTS = {
+  old: {
+    label: 'Old account',
+    settingKey: 'script_template',
+    defaultScript: DEFAULT_SCRIPT_OLD,
+    // Matilda - warm, professional, middle-aged female. (Per provider, so the
+    // two accounts still get different voices if the provider is switched.)
+    voices: { '11labs': 'XrExE9yKIg1WjnnlVkGX', vapi: 'Savannah', openai: 'nova' },
+    envSuffix: '',
+  },
+  new: {
+    label: 'New account',
+    settingKey: 'script_template_new',
+    defaultScript: DEFAULT_SCRIPT_NEW,
+    // Eric - smooth, trustworthy, middle-aged male. Deliberately the opposite
+    // of Matilda, and one of the few premade voices with a dedicated
+    // eleven_turbo_v2_5 fine-tune, which is the model these calls run on.
+    voices: { '11labs': 'cjVigY5qzO86Huf0OWal', vapi: 'Elliot', openai: 'onyx' },
+    envSuffix: '_NEW',
+  },
+};
+
+function normalizeVariant(variant) {
+  return variant === 'new' ? 'new' : 'old';
+}
+
+// One-time split. For a short window both accounts shared a single script, and
+// that script - the old wording plus the installer framing - was saved into
+// what is now the old account's slot. Hand the old account its own wording
+// back; the new account picks up its own default. The previous text is kept in
+// settings rather than dropped, in case anything in it needs recovering.
+function migrateVariantSplit() {
+  if (getSetting('variant_split_v1')) return;
+  const current = getSetting(VARIANTS.old.settingKey);
+  if (current && /internal welcome call/i.test(current)) {
+    setSetting('script_template_pre_split_backup', current);
+    setSetting(VARIANTS.old.settingKey, DEFAULT_SCRIPT_OLD);
+  }
+  setSetting('variant_split_v1', new Date().toISOString());
+}
+migrateVariantSplit();
+
+function variantLabel(variant) {
+  return VARIANTS[normalizeVariant(variant)].label;
+}
 
 function buildSystemPrompt(script) {
   return `You are a warm, friendly, easy-going welcome-call specialist for {{companyName}}.
@@ -205,17 +310,18 @@ function healEntities(text) {
     .replace(/&amp;/g, '&');
 }
 
-// One script for every call. The welcome call is the installer's own
-// verification, so it reads the same no matter which sales partner sold the
-// job - the opening in STEP 1 is what establishes whose call this is.
-// (Callers still pass the legacy per-call variant; it is ignored.)
-function scriptSettingKey() {
-  return 'script_template';
+function scriptSettingKey(variant) {
+  return VARIANTS[normalizeVariant(variant)].settingKey;
 }
 
-function getScript() {
-  const saved = getSetting(scriptSettingKey());
-  return saved ? healEntities(saved) : DEFAULT_SCRIPT;
+function defaultScriptFor(variant) {
+  return VARIANTS[normalizeVariant(variant)].defaultScript;
+}
+
+function getScript(variant) {
+  const v = normalizeVariant(variant);
+  const saved = getSetting(VARIANTS[v].settingKey);
+  return saved ? healEntities(saved) : VARIANTS[v].defaultScript;
 }
 
 // Admin-curated Q&A the assistant may answer from. Anything not covered here
@@ -251,35 +357,41 @@ function resolveVoice(requested) {
   return LEGACY_VOICE_MAP[voice.toLowerCase()] || voice;
 }
 
-function buildVoice() {
+// Each variant gets its own voice. Env vars override per variant: the old
+// account reads VAPI_VOICE_ID/_STABILITY/_STYLE (already set in production),
+// the new account reads the same names with a _NEW suffix.
+function buildVoice(variant) {
+  const cfg = VARIANTS[normalizeVariant(variant)];
+  const sfx = cfg.envSuffix;
   // Three voice providers, chosen via VAPI_VOICE_PROVIDER:
   //   vapi (default)  - built-in voices (Savannah, Elliot, Zoe...)
   //   11labs          - ElevenLabs (needs key in Vapi > Integrations)
   //   openai          - OpenAI's voices, same TTS family as ChatGPT's voice
   //                     mode (nova, shimmer, alloy, echo, fable, onyx)
   const provider = env('VAPI_VOICE_PROVIDER') || 'vapi';
+  const fallback = cfg.voices[provider] || cfg.voices.vapi;
   let voice;
   if (provider === '11labs') {
     voice = {
       provider: '11labs',
-      voiceId: env('VAPI_VOICE_ID') || 'XrExE9yKIg1WjnnlVkGX',
+      voiceId: env('VAPI_VOICE_ID' + sfx) || fallback,
       // turbo = fast, responsive turn-taking. (eleven_multilingual_v2 is
       // richer-sounding but adds noticeable response lag on live calls.)
       model: env('VAPI_11LABS_MODEL') || 'eleven_turbo_v2_5',
       // Expressiveness tuning: lower stability + style boost = livelier,
       // more human delivery (higher stability sounds flat/robotic).
-      stability: parseFloat(env('VAPI_VOICE_STABILITY')) || 0.35,
+      stability: parseFloat(env('VAPI_VOICE_STABILITY' + sfx)) || 0.35,
       similarityBoost: 0.75,
-      style: parseFloat(env('VAPI_VOICE_STYLE')) || 0.45,
+      style: parseFloat(env('VAPI_VOICE_STYLE' + sfx)) || 0.45,
       useSpeakerBoost: true,
     };
   } else if (provider === 'openai') {
-    voice = { provider: 'openai', voiceId: env('VAPI_VOICE_ID') || 'nova' };
+    voice = { provider: 'openai', voiceId: env('VAPI_VOICE_ID' + sfx) || fallback };
   } else {
-    voice = { provider: 'vapi', voiceId: resolveVoice(env('VAPI_VOICE_ID')) };
+    voice = { provider: 'vapi', voiceId: resolveVoice(env('VAPI_VOICE_ID' + sfx) || fallback) };
   }
   // Optional global speaking speed (e.g. 0.9 = 10% slower). Only sent when set.
-  const speed = parseFloat(env('VAPI_VOICE_SPEED'));
+  const speed = parseFloat(env('VAPI_VOICE_SPEED' + sfx) || env('VAPI_VOICE_SPEED'));
   if (!Number.isNaN(speed) && speed > 0) voice.speed = speed;
   return voice;
 }
@@ -289,8 +401,10 @@ function buildAssistantPayload() {
   const payload = {
     name: `${COMPANY_NAME} Welcome Call`,
     firstMessage: `Hey {{homeownerName}}, can you hear me okay?`,
-    model: buildModel(),
-    voice: buildVoice(),
+    // The shared assistant is built from the old account's script and voice;
+    // every call then overrides both for whichever variant it belongs to.
+    model: buildModel('old'),
+    voice: buildVoice('old'),
     transcriber: { provider: 'deepgram', model: 'nova-3' },
     endCallFunctionEnabled: true,
     maxDurationSeconds: 900,
@@ -351,15 +465,15 @@ function buildAssistantPayload() {
   return payload;
 }
 
-// The full model config: brain + system prompt + optional transfer tool.
-function buildModel() {
+// The full model config for one variant: brain + system prompt + transfer tool.
+function buildModel(variant) {
   const model = {
     provider: MODEL_PROVIDER,
     model: MODEL,
     // Low temperature keeps the assistant close to the script's wording
     // instead of freelancing its own phrasing.
     temperature: 0.3,
-    messages: [{ role: 'system', content: buildSystemPrompt(getScript()) }],
+    messages: [{ role: 'system', content: buildSystemPrompt(getScript(variant)) }],
   };
   // Optional live human handoff: if HUMAN_TRANSFER_NUMBER is set, the AI can
   // transfer the call to a real person when the homeowner asks for one.
@@ -480,15 +594,19 @@ function keytermsFor(call) {
 
 // Everything that personalizes the shared assistant for one specific call.
 function overridesFor(call) {
-  const overrides = {
+  // Always send both, so a call runs its own account's script and voice
+  // regardless of what the shared assistant happens to be configured with.
+  const variant = normalizeVariant(call.script_variant);
+  return {
     variableValues: variableValuesFor(call),
+    model: buildModel(variant),
+    voice: buildVoice(variant),
     transcriber: {
       provider: 'deepgram',
       model: 'nova-3',
       keyterm: keytermsFor(call),
     },
   };
-  return overrides;
 }
 
 function variableValuesFor(call) {
@@ -539,7 +657,10 @@ async function startPhoneCall(call, overrideNumber) {
 
 module.exports = {
   COMPANY_NAME,
-  DEFAULT_SCRIPT,
+  VARIANTS,
+  normalizeVariant,
+  variantLabel,
+  defaultScriptFor,
   DEFAULT_FAQ,
   getScript,
   scriptSettingKey,

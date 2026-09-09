@@ -90,7 +90,7 @@ function createCall(data) {
       offset_percent: null,
       installer: null,
       deal_json: null,
-      script_variant: 'sw',
+      script_variant: 'old',
       ...data,
     });
   return db.prepare('SELECT * FROM calls WHERE id = ?').get(info.lastInsertRowid);

@@ -79,6 +79,8 @@ function extractCallFields(body, createdBy) {
     // partner sold the job. An explicit installer (e.g. from a recording
     // upload) still takes precedence when provided.
     installer: clean(body.installer) || DEFAULT_INSTALLER,
+    // Which account this call belongs to - picks the script and the voice.
+    script_variant: vapi.normalizeVariant(body.script_variant),
     monthly_payment: clean(body.monthly_payment) || null,
     escalator: clean(body.escalator) || null,
     offset_percent: clean(body.offset_percent) || null,
@@ -596,6 +598,7 @@ app.post('/admin/analyze', auth.requireAdmin, uploadAudio.single('audio'), async
             property_address: req.body.new_address,
             email: req.body.new_email,
             installer: req.body.new_installer,
+            script_variant: req.body.new_script_variant,
           },
           'upload'
         )
@@ -605,11 +608,11 @@ app.post('/admin/analyze', auth.requireAdmin, uploadAudio.single('audio'), async
     }
     if (!call) return fail('Pick which client this recording belongs to.');
 
-    console.log(`[analyze] auditing call ${call.id} against the welcome-call script...`);
+    console.log(`[analyze] auditing call ${call.id} against the ${vapi.variantLabel(call.script_variant)} script...`);
     const analysis = await analyzeTranscript({
       transcript,
       call,
-      script: vapi.getScript(),
+      script: vapi.getScript(call.script_variant),
       apiKey,
     });
     console.log(`[analyze] audit complete for call ${call.id}`);
@@ -751,7 +754,7 @@ app.get('/admin/calls/:id/script', auth.requireAdmin, (req, res) => {
   if (!call) return res.status(404).send('Not found');
   const vars = vapi.overridesFor(call).variableValues;
   const filledScript = humanizeScript(
-    vapi.getScript().replace(/\{\{(\w+)\}\}/g, (match, key) => (vars[key] !== undefined ? vars[key] : match)),
+    vapi.getScript(call.script_variant).replace(/\{\{(\w+)\}\}/g, (match, key) => (vars[key] !== undefined ? vars[key] : match)),
     call.homeowner_name
   );
   res.render('admin-manual-script', { ...BRAND, call, filledScript });
@@ -773,10 +776,13 @@ app.post('/admin/calls/:id/delete', auth.requireAdmin, (req, res) => {
 });
 
 app.get('/admin/script', auth.requireAdmin, (req, res) => {
+  const variant = vapi.normalizeVariant(req.query.variant);
   res.render('admin-script', {
     ...BRAND,
-    script: vapi.getScript(),
-    defaultScript: vapi.DEFAULT_SCRIPT,
+    variant,
+    variants: vapi.VARIANTS,
+    script: vapi.getScript(variant),
+    defaultScript: vapi.defaultScriptFor(variant),
     saved: Boolean(req.query.saved),
     error: req.query.error || null,
   });
@@ -795,13 +801,14 @@ function decodeHtmlEntities(text) {
 }
 
 app.post('/admin/script', auth.requireAdmin, async (req, res) => {
+  const variant = vapi.normalizeVariant(req.body.variant);
   const script = decodeHtmlEntities(String(req.body.script || '').trim());
-  setSetting(vapi.scriptSettingKey(), script || vapi.DEFAULT_SCRIPT);
+  setSetting(vapi.scriptSettingKey(variant), script || vapi.defaultScriptFor(variant));
   try {
     if (process.env.VAPI_PRIVATE_KEY) await vapi.ensureAssistant();
-    res.redirect('/admin/script?saved=1');
+    res.redirect(`/admin/script?variant=${variant}&saved=1`);
   } catch (err) {
-    res.redirect(`/admin/script?error=${encodeURIComponent('Saved locally, but syncing to Vapi failed: ' + err.message)}`);
+    res.redirect(`/admin/script?variant=${variant}&error=${encodeURIComponent('Saved locally, but syncing to Vapi failed: ' + err.message)}`);
   }
 });
 

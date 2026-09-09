@@ -514,7 +514,7 @@ body {
 .filter-btn.active .muted { opacity: 0.75; }
 
 /* Cohesive call list: one elevated container, column headers, hairline rows */
-.list-card { --cols: 26px minmax(190px, 1.6fr) 142px minmax(170px, 1fr) 168px; padding: 0; overflow: hidden; }
+.list-card { --cols: 26px minmax(174px, 1.4fr) 74px 142px minmax(150px, 1fr) 168px; padding: 0; overflow: hidden; }
 .list-head {
   display: grid; grid-template-columns: var(--cols); gap: 12px; align-items: center;
   padding: 9px 18px; border-bottom: 1px solid var(--border); background: var(--surface-tint);
@@ -557,7 +557,7 @@ body {
   .list-head { display: none; }
   .list-card { --cols: none; }
   .list-card .call-acc summary { grid-template-columns: 22px 1fr auto; row-gap: 6px; }
-  .list-card .acc-date { display: none; }
+  .list-card .cell-source, .list-card .acc-date { display: none; }
   .list-card .cell-issues, .list-card .cell-status { grid-column: 2 / -1; }
 }
 

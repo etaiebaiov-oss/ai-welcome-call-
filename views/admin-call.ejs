@@ -44,6 +44,7 @@
         <div><span class="muted">Email</span><br><%= call.email || '—' %></div>
         <div><span class="muted">Property address</span><br><%= call.property_address %></div>
         <div><span class="muted">Installer</span><br><%= call.installer || '—' %></div>
+        <div><span class="muted">Account</span><br><%= call.script_variant === 'new' ? 'New' : 'Old' %></div>
         <div><span class="muted">Monthly payment</span><br><%= call.monthly_payment || '—' %></div>
         <div><span class="muted">Rate escalator</span><br><%= call.escalator || '—' %></div>
         <div><span class="muted">Energy offset</span><br><%= call.offset_percent || '—' %></div>

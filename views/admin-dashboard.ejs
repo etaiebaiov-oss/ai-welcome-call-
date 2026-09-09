@@ -90,6 +90,7 @@
         <div class="list-head" aria-hidden="true">
           <span></span>
           <span>Homeowner</span>
+          <span>Account</span>
           <span>Review status</span>
           <span>Issues</span>
           <span class="th-right">Last updated</span>
@@ -108,6 +109,7 @@
               <strong><%= c.homeowner_name %></strong>
               <span class="sub"><%= c.phone %></span>
             </span>
+            <span class="cell-source"><%= c.script_variant === 'new' ? 'NEW' : 'OLD' %></span>
             <span class="cell-status">
               <% if (c.status === 'completed') { %>
                 <span class="badge badge-success"><%- include('partials/icon', { name: 'check', size: 12 }) %> Completed</span>
@@ -236,6 +238,12 @@
           <label>Phone <span class="req">*</span><input name="phone" required maxlength="40" type="tel"></label>
           <label>Email<input name="email" type="email" maxlength="200"></label>
           <label>Property address <span class="req">*</span><input name="property_address" required maxlength="400"></label>
+          <label>Account
+            <select name="script_variant">
+              <option value="old">Old</option>
+              <option value="new">New</option>
+            </select>
+          </label>
           <label>Monthly payment<input name="monthly_payment" data-mask="currency" inputmode="decimal" maxlength="60" placeholder="$178.40"></label>
           <label>Annual rate escalator
             <select name="escalator">
