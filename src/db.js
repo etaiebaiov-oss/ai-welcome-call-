@@ -104,7 +104,13 @@ module.exports = {
   setSetting,
   getOrCreateSecret,
   createCall,
-  getCallByToken: (token) => db.prepare('SELECT * FROM calls WHERE token = ?').get(token),
+  // Links get pasted into texts with junk stuck to the end - a trailing
+  // backslash, a period, a closing bracket - which used to 404 the homeowner.
+  // Tokens are always 32 hex characters, so match on exactly that.
+  getCallByToken: (token) => {
+    const m = String(token || '').match(/[a-f0-9]{32}/i);
+    return m ? db.prepare('SELECT * FROM calls WHERE token = ?').get(m[0].toLowerCase()) : undefined;
+  },
   getCallById: (id) => db.prepare('SELECT * FROM calls WHERE id = ?').get(id),
   getCallByVapiId: (vapiCallId) =>
     db.prepare('SELECT * FROM calls WHERE vapi_call_id = ?').get(vapiCallId),

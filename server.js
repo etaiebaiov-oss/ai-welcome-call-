@@ -33,6 +33,9 @@ app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+// Changes on every deploy, so phones that cached an old call.js can't keep
+// running it.
+app.locals.assetVersion = Date.now().toString(36);
 // Lets the shared navigation mark the active page.
 app.use((req, res, next) => {
   res.locals.currentPath = req.path;

@@ -82,7 +82,7 @@
 
   <% if (!done) { %>
   <script>window.CALL_TOKEN = <%- JSON.stringify(call.token) %>;</script>
-  <script type="module" src="/call.js"></script>
+  <script type="module" src="/call.js?v=<%= assetVersion %>"></script>
   <% } %>
 </body>
 </html>
