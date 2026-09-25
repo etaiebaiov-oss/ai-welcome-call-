@@ -228,11 +228,28 @@ app.post('/api/vapi/webhook', async (req, res) => {
       `[webhook] call ${record.id} produced no conversation ` +
       `(duration=${durationSeconds}s, reason=${message.endedReason || 'unknown'}) - leaving it pending so the link still works`
     );
+    // Only note why it failed. An earlier attempt on this link may have been a
+    // real conversation, and a dud retry must not wipe its transcript,
+    // analysis, or recording.
+    db.prepare(
+      `UPDATE calls SET
+         status = CASE
+           WHEN transcript IS NULL OR transcript = '' THEN 'pending'
+           WHEN flags_json IS NOT NULL AND flags_json NOT IN ('', '[]') THEN 'flagged'
+           ELSE 'completed' END,
+         ended_reason = ?
+       WHERE id = ?`
+    ).run(message.endedReason || null, record.id);
+    return res.json({ ok: true });
   }
 
+  // Always store THIS call's own recording. A homeowner who retries gets a
+  // new Vapi call on the same record; the old rule of "keep whatever is
+  // already stored" kept a 33-second first attempt as the recording of a
+  // full call whose transcript had replaced it. Earlier files stay on disk.
   let recordingFile = record.recording_file;
   const recordingUrl = vapi.pickRecordingUrl(artifact) || vapi.pickRecordingUrl(message);
-  if (recordingUrl && !recordingFile) {
+  if (recordingUrl) {
     try {
       recordingFile = await downloadRecording(recordingUrl, record.id);
     } catch (err) {
@@ -259,10 +276,10 @@ app.post('/api/vapi/webhook', async (req, res) => {
        recording_url = COALESCE(?, recording_url),
        duration_seconds = ?,
        ended_reason = ?,
-       completed_at = CASE WHEN ? THEN NULL ELSE datetime('now') END
+       completed_at = datetime('now')
      WHERE id = ?`
   ).run(
-    neverHappened ? 'pending' : (flagged ? 'flagged' : 'completed'),
+    flagged ? 'flagged' : 'completed',
     transcript,
     analysis.summary || null,
     structured ? JSON.stringify(structured) : null,
@@ -271,7 +288,6 @@ app.post('/api/vapi/webhook', async (req, res) => {
     recordingUrl,
     durationSeconds,
     message.endedReason || null,
-    neverHappened ? 1 : 0,
     record.id
   );
 
@@ -432,9 +448,38 @@ app.post('/admin/calls/:id/fetch-recording', auth.requireAdmin, async (req, res)
   }
 });
 
+// Calls whose stored recording belongs to an earlier attempt than the one the
+// record now describes: the file was saved more than a minute before the call
+// was last completed. Filenames carry the save time in ms.
+function staleRecordingCalls() {
+  return listCalls().filter((c) => {
+    if (!c.vapi_call_id || !c.recording_file || !c.completed_at) return false;
+    const saved = c.recording_file.match(/-(\d{13})\.\w+$/);
+    if (!saved) return false;
+    const completed = Date.parse(c.completed_at.replace(' ', 'T') + 'Z');
+    return completed - Number(saved[1]) > 60 * 1000;
+  });
+}
+
+async function repairStaleRecordings() {
+  if (!process.env.VAPI_PRIVATE_KEY) return;
+  const stale = staleRecordingCalls();
+  if (!stale.length) return;
+  console.log(`[recordings] ${stale.length} call(s) have a recording from an earlier attempt - re-fetching from Vapi`);
+  for (const call of stale) {
+    try {
+      const file = await storeRecordingFromVapi(call);
+      console.log(`[recordings] call ${call.id} (${call.homeowner_name}): stored full recording ${file}`);
+    } catch (err) {
+      console.error(`[recordings] call ${call.id} (${call.homeowner_name}): re-fetch failed - ${err.message}`);
+    }
+  }
+}
+
 // Bulk recovery for every finished call that never got its audio stored.
 app.post('/admin/recordings/backfill', auth.requireAdmin, async (req, res) => {
-  const missing = listCalls().filter((c) => c.vapi_call_id && !c.recording_file);
+  const staleIds = new Set(staleRecordingCalls().map((c) => c.id));
+  const missing = listCalls().filter((c) => c.vapi_call_id && (!c.recording_file || staleIds.has(c.id)));
   let stored = 0;
   const failures = [];
   for (const call of missing) {
@@ -840,4 +885,5 @@ app.listen(PORT, () => {
   console.log(`${BRAND.companyName} welcome-call platform listening on port ${PORT}`);
   if (!process.env.APP_URL) console.warn('WARNING: APP_URL is not set — Vapi webhooks (recordings, transcripts, flags) will not be delivered.');
   if (!process.env.ADMIN_PASSWORD) console.warn('WARNING: ADMIN_PASSWORD is not set — the admin dashboard is disabled.');
+  setTimeout(() => repairStaleRecordings().catch((err) => console.error('[recordings] repair failed:', err.message)), 5000);
 });
